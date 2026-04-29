@@ -151,7 +151,7 @@ export default function DashboardPage() {
       {/* ── ConvEngine Chat widget (panel / sidepanel modes only) ───── */}
       {activeTab !== 'Fullscreen Chat' && resolvedMode !== 'fullscreen' && (
         <ConvEngineChat
-          key={chatMode}
+          key={resolvedMode}
           mode={resolvedMode}
           position="bottom"
           align={resolvedAlign}
