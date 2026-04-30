@@ -467,14 +467,54 @@ function ColorAssetInput({ configKey, label, hint, value, onChange }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Playground
 // ─────────────────────────────────────────────────────────────────────────────
+function buildGeneratedCode(settings, iconSvgs) {
+  const m     = settings.chatMode;
+  const mode  = m === 'fullscreen' ? 'fullscreen' : m.startsWith('sidepanel') ? 'sidepanel' : 'panel';
+  const align = m.startsWith('sidepanel') ? `\n  align="${m === 'sidepanel-left' ? 'left' : 'right'}"` : '';
+  const extras = [
+    settings.title       !== 'ConvEngine Assistant'               ? `    title: "${settings.title}",` : null,
+    settings.subtitle    !== "Ask me anything \u2014 I'll do my best to help." ? `    subtitle: "${settings.subtitle}",` : null,
+    settings.placeholder !== 'Ask ConvEngine\u2026'               ? `    placeholder: "${settings.placeholder}",` : null,
+    !settings.showHeaderDot       ? '    showHeaderDot: false,'       : null,
+    !settings.showLandingAvatar   ? '    showLandingAvatar: false,'   : null,
+    !settings.showLandingSubtitle ? '    showLandingSubtitle: false,' : null,
+    !settings.showNewChat         ? '    showNewChat: false,'         : null,
+    !settings.showLayoutPicker    ? '    showLayoutPicker: false,'    : null,
+    !settings.showMaximize        ? '    showMaximize: false,'        : null,
+    !settings.showMinimize        ? '    showMinimize: false,'        : null,
+    ...(['bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText','panelBg','composerBg'].map((key) => {
+      const v = settings[key];
+      const l = v?.light?.trim(); const d = v?.dark?.trim();
+      if (!l && !d) return null;
+      const ser = (l && d) ? `{ light: "${l}", dark: "${d}" }` : l ? `"${l}"` : `{ dark: "${d}" }`;
+      return `    ${key}: ${ser},`;
+    })),
+  ].filter(Boolean).join('\n');
+  const changedIcons = Object.keys(ICON_META).filter(k => iconSvgs[k] !== DEFAULT_ICON_SVGS[k]);
+  const iconsSnippet = changedIcons.length
+    ? `\n    icons: {\n${changedIcons.map(k => `      // custom ${k} \u2014 replace with your React component\n      ${k}: My${k},`).join('\n')}\n    },`
+    : '';
+  return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n    apiHost: "http://localhost:8080",\n    showFeedback: ${settings.showFeedback},\n    showAudit: ${settings.showAudit},\n    showDarkModeLightMode: ${settings.showDarkModeLightMode},${extras ? '\n' + extras : ''}${iconsSnippet}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
+}
+
 function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconReset }) {
+  const generatedCode = buildGeneratedCode(settings, iconSvgs);
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 rounded-t-2xl">
         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
           <span>🎛️</span> Live Config Playground
         </h3>
         <p className="text-xs text-indigo-200 mt-0.5">Toggle settings below — the chat widget updates instantly.</p>
+      </div>
+
+      {/* ── Sticky Generated Usage ── */}
+      <div className="sticky top-14 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-100 shadow-sm px-5 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Generated Usage</p>
+          <span className="text-[10px] text-slate-400">Updates live as you change settings ↓</span>
+        </div>
+        <CodeBlock lang="jsx" code={generatedCode} />
       </div>
 
       <div className="p-5 space-y-6">
@@ -666,41 +706,6 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
           </div>
         </div>
 
-        <hr className="border-slate-100" />
-
-        <div className="space-y-2">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Generated Usage</p>
-          <CodeBlock lang="jsx" code={(() => {
-            const m     = settings.chatMode;
-            const mode  = m === 'fullscreen' ? 'fullscreen' : m.startsWith('sidepanel') ? 'sidepanel' : 'panel';
-            const align = m.startsWith('sidepanel') ? `\n  align="${m === 'sidepanel-left' ? 'left' : 'right'}"` : '';
-            const extras = [
-              settings.title       !== 'ConvEngine Assistant'               ? `    title: "${settings.title}",` : null,
-              settings.subtitle    !== "Ask me anything — I'll do my best to help." ? `    subtitle: "${settings.subtitle}",` : null,
-              settings.placeholder !== 'Ask ConvEngine…'                   ? `    placeholder: "${settings.placeholder}",` : null,
-              !settings.showHeaderDot       ? '    showHeaderDot: false,'       : null,
-              !settings.showLandingAvatar   ? '    showLandingAvatar: false,'   : null,
-              !settings.showLandingSubtitle ? '    showLandingSubtitle: false,' : null,
-              !settings.showNewChat         ? '    showNewChat: false,'         : null,
-              !settings.showLayoutPicker    ? '    showLayoutPicker: false,'    : null,
-              !settings.showMaximize        ? '    showMaximize: false,'        : null,
-              !settings.showMinimize        ? '    showMinimize: false,'        : null,
-              // Color overrides
-              ...(['bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText','panelBg','composerBg'].map((key) => {
-                const v = settings[key];
-                const l = v?.light?.trim(); const d = v?.dark?.trim();
-                if (!l && !d) return null;
-                const ser = (l && d) ? `{ light: "${l}", dark: "${d}" }` : l ? `"${l}"` : `{ dark: "${d}" }`;
-                return `    ${key}: ${ser},`;
-              })),
-            ].filter(Boolean).join('\n');
-            const changedIcons = Object.keys(ICON_META).filter(k => iconSvgs[k] !== DEFAULT_ICON_SVGS[k]);
-            const iconsSnippet = changedIcons.length
-              ? `\n    icons: {\n${changedIcons.map(k => `      // custom ${k} — replace with your React component\n      ${k}: My${k},`).join('\n')}\n    },`
-              : '';
-            return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n    apiHost: "http://localhost:8080",\n    showFeedback: ${settings.showFeedback},\n    showAudit: ${settings.showAudit},\n    showDarkModeLightMode: ${settings.showDarkModeLightMode},${extras ? '\n' + extras : ''}${iconsSnippet}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
-          })()} />
-        </div>
       </div>
     </div>
   );
@@ -838,6 +843,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false }) {
           <NavDot href="#quickstart">Quick Start</NavDot>
           <NavDot href="#props">Component Props</NavDot>
           <NavDot href="#config">config Object</NavDot>
+          <NavDot href="#colors">Color Theming</NavDot>
           <NavDot href="#theme">Theme Tokens</NavDot>
           <NavDot href="#icons">Custom Icons</NavDot>
           <NavDot href="#renderers">Custom Renderers</NavDot>
@@ -1052,6 +1058,121 @@ const myRenderer = {
                 <PropRow prop="onMessage"             type='function' defaultVal='undefined'                                   description='(text: string) => void — fired when the user sends a message.' />
                 <PropRow prop="onResponse"            type='function' defaultVal='undefined'                                   description='(text: string) => void — fired when an assistant response arrives.' />
               </PropsTable>
+            </DocCardBody>
+          </DocCard>
+
+          {/* Per-Theme Color API */}
+          <DocCard id="colors">
+            <SectionHeader gradient="bg-gradient-to-r from-violet-500 to-fuchsia-600" icon="🌗" title="Per-Theme Color API" subtitle="Different colors for light and dark mode — one config, two appearances" />
+            <DocCardBody>
+              <Tip color="violet" icon="💡" title="The concept — iOS Color Assets for the web">
+                Every color config prop accepts <strong>two shapes</strong>: a plain string (applies to both light and dark) or a{' '}
+                <code className="font-mono text-xs bg-violet-100 px-1 rounded">{'{'}{ ' light, dark ' }{'}'}</code>{' '}
+                object that lets you specify a different value per theme. ConvEngine reads the active theme at render time and automatically picks the right variant — just like iOS Color Assets or Android night-mode resources. If only one key is present, the other falls back to what is set.
+              </Tip>
+
+              {/* Shape comparison */}
+              <div className="rounded-xl border border-violet-100 bg-violet-50/60 p-4 space-y-3">
+                <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">Accepted shapes</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-white border border-violet-100 p-3 space-y-1.5">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Plain string — same in both modes</p>
+                    <code className="block text-xs font-mono text-indigo-600">bubbleUserBg: &quot;#6366f1&quot;</code>
+                    <p className="text-xs text-slate-500">One value. ConvEngine uses it for both ☀️ light and 🌙 dark.</p>
+                  </div>
+                  <div className="rounded-lg bg-white border border-violet-100 p-3 space-y-1.5">
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Object — one value per theme</p>
+                    <code className="block text-xs font-mono text-indigo-600">bubbleUserBg: {'{'} light: &quot;#6366f1&quot;, dark: &quot;...&quot; {'}'}</code>
+                    <p className="text-xs text-slate-500">ConvEngine picks <code className="font-mono bg-violet-50 px-1 rounded">light</code> in ☀️, <code className="font-mono bg-violet-50 px-1 rounded">dark</code> in 🌙.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Prop → CSS var table */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Color props &amp; their CSS variable targets</p>
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs uppercase text-slate-400 tracking-wider">
+                        <th className="px-4 py-3 text-left font-bold">config prop</th>
+                        <th className="px-4 py-3 text-left font-bold">Overrides CSS var</th>
+                        <th className="px-4 py-3 text-left font-bold">What it colors</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 bg-white">
+                      {[
+                        ['bubbleUserBg',    '--ce-bg-bubble-user',    'User message bubble — fill or gradient'],
+                        ['bubbleUserText',  '--ce-text-bubble-user',  'User message bubble text'],
+                        ['bubbleAgentBg',   '--ce-bg-bubble-agent',   'Assistant message bubble — fill or gradient'],
+                        ['bubbleAgentText', '--ce-text-bubble-agent', 'Assistant message bubble text'],
+                        ['panelBg',         '--ce-bg-panel',          'Chat panel / sidepanel background'],
+                        ['composerBg',      '--ce-bg-composer',       'Composer (input area) background'],
+                      ].map(([prop, cssVar, desc]) => (
+                        <tr key={prop} className="hover:bg-violet-50/40">
+                          <td className="px-4 py-2.5"><code className="font-mono text-xs text-indigo-600 font-semibold">{prop}</code></td>
+                          <td className="px-4 py-2.5"><code className="font-mono text-xs text-pink-600">{cssVar}</code></td>
+                          <td className="px-4 py-2.5 text-sm text-slate-600">{desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Example 1 */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example 1 — Plain string (same color in both modes)</p>
+                <p className="text-sm text-slate-600">Pass a hex, rgba, or CSS color string. ConvEngine applies it regardless of whether the widget is in light or dark mode.</p>
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    bubbleUserBg:   "#6366f1",  // indigo — both modes\n    bubbleUserText: "#ffffff",\n    bubbleAgentBg:  "#f1f5f9",\n  }}\n/>`} />
+              </div>
+
+              {/* Example 2 */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example 2 — Per-theme object (different color per mode)</p>
+                <p className="text-sm text-slate-600">
+                  Pass <code className="font-mono text-xs bg-slate-100 px-1 rounded">{'{ light: "...", dark: "..." }'}</code>. ConvEngine resolves the correct value every time the theme changes — no extra state needed on your side.
+                </p>
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    bubbleUserBg: {\n      light: "#6366f1",   // ☀️ solid indigo\n      dark:  "#1e3a5f",   // 🌙 deep navy\n    },\n    bubbleAgentBg: {\n      light: "#f1f5f9",   // ☀️ slate-100\n      dark:  "#2b2b2b",   // 🌙 dark neutral\n    },\n    panelBg: {\n      light: "#ffffff",\n      dark:  "#1a1a1a",\n    },\n    composerBg: {\n      light: "#f8fafc",\n      dark:  "#212121",\n    },\n  }}\n/>`} />
+              </div>
+
+              {/* Example 3 */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example 3 — Gradient user bubble for dark mode</p>
+                <Tip color="blue" icon="🎨" title="Gradients work everywhere">
+                  Any valid CSS <code className="font-mono text-xs bg-sky-100 px-1 rounded">background</code> value is accepted — including{' '}
+                  <code className="font-mono text-xs bg-sky-100 px-1 rounded">linear-gradient</code>,{' '}
+                  <code className="font-mono text-xs bg-sky-100 px-1 rounded">radial-gradient</code>, and multi-stop gradients.
+                  Mix a solid hex in light mode with a gradient in dark mode — fully supported.
+                </Tip>
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    bubbleUserBg: {\n      light: "#6366f1",\n      // 🌙 glass-blue gradient — matches convengine-ui dark default\n      dark:  "linear-gradient(90deg, rgba(37,99,235,0.55) 0%, rgba(96,165,250,0.38) 100%)",\n    },\n    bubbleAgentBg: {\n      light: "#f1f5f9",\n      dark:  "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",\n    },\n  }}\n/>`} />
+              </div>
+
+              {/* Example 4 */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example 4 — Seed initial dark mode with <code className="font-mono text-pink-600">defaultDark</code></p>
+                <Tip color="amber" icon="🌙" title="defaultDark">
+                  The widget opens in light mode unless you set <code className="font-mono text-xs bg-amber-100 px-1 rounded">defaultDark: true</code>.
+                  This seeds the first render. The user can still toggle if you also enable{' '}
+                  <code className="font-mono text-xs bg-amber-100 px-1 rounded">showDarkModeLightMode</code>.
+                </Tip>
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    defaultDark:          true,   // 🌙 widget opens in dark mode\n    showDarkModeLightMode: true,  // ☀️/🌙 toggle visible in header\n    bubbleUserBg: {\n      light: "#6366f1",\n      dark:  "linear-gradient(90deg, rgba(37,99,235,0.55) 0%, rgba(96,165,250,0.38) 100%)",\n    },\n    panelBg: {\n      light: "#ffffff",\n      dark:  "#1a1a1a",\n    },\n  }}\n/>`} />
+              </div>
+
+              {/* Example 5 */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example 5 — Partial object (override only one mode)</p>
+                <p className="text-sm text-slate-600">
+                  You don&apos;t have to provide both keys. Omit one and it falls back to whatever the other key is set to.
+                  If neither key has a value, the built-in CSS token default is used.
+                </p>
+                <CodeBlock lang="jsx" code={`// Only customise dark — light keeps the built-in default\n<ConvEngineChat\n  config={{\n    bubbleUserBg: {\n      dark: "linear-gradient(90deg, rgba(37,99,235,0.55) 0%, rgba(96,165,250,0.38) 100%)",\n    },\n  }}\n/>\n\n// Only customise light — dark keeps the built-in default\n<ConvEngineChat\n  config={{\n    panelBg: {\n      light: "#fdf4ff",   // lavender tint in light mode only\n    },\n  }}\n/>`} />
+                <Tip color="green" icon="✅" title="Fallback resolution order">
+                  <code className="font-mono text-xs bg-emerald-100 px-1 rounded">dark ?? light</code> in dark mode —{' '}
+                  <code className="font-mono text-xs bg-emerald-100 px-1 rounded">light ?? dark</code> in light mode —{' '}
+                  then the built-in CSS token if neither is set.
+                </Tip>
+              </div>
             </DocCardBody>
           </DocCard>
 
