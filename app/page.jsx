@@ -1,6 +1,6 @@
 'use client';
 
-import { useState }            from 'react';
+import { useState, useRef }   from 'react';
 import { ConvEngineChat }       from '@salilvnair/convengine-chat';
 import { MetricCard }           from './components/MetricCard.jsx';
 import { RevenueChart }         from './components/RevenueChart.jsx';
@@ -266,7 +266,7 @@ function DemoApp({ onBack }) {
           align={resolvedAlign}
           onModeChange={(m) => setChatMode(m === 'fullscreen' ? 'panel' : m)}
           config={{
-            apiHost:               'http://localhost:8080',
+            apiHost:               '',
             title:                 'ConvEngine Assistant',
             placeholder:           'Ask anything about your data…',
             showAudit:             chatSettings.showAudit,
@@ -309,9 +309,11 @@ function QuickstartApp({ onBack }) {
     bubbleAgentText:       { light: '', dark: '' },
     panelBg:               { light: '', dark: '' },
     composerBg:            { light: '', dark: '' },
+    iconColor:             { light: '', dark: '' },
     previewDark:           false,
   });
   const [iconComponents, setIconComponents] = useState({});
+  const chatActionsRef = useRef(null);
 
   const resolvedMode  = chatMode === 'fullscreen' ? 'panel' : chatMode.startsWith('sidepanel') ? 'sidepanel' : 'panel';
   const resolvedAlign = chatMode === 'sidepanel-left' ? 'left' : 'right';
@@ -325,6 +327,7 @@ function QuickstartApp({ onBack }) {
       >
         <ChatSettingsView
           hideHeader
+          chatActionsRef={chatActionsRef}
           onSettingsChange={(s, icons) => {
             setChatSettings(s);
             setIconComponents(icons ?? {});
@@ -338,9 +341,10 @@ function QuickstartApp({ onBack }) {
           mode={resolvedMode}
           position="bottom"
           align={resolvedAlign}
+          actionsRef={chatActionsRef}
           onModeChange={(m) => setChatMode(m === 'fullscreen' ? 'panel' : m)}
           config={{
-            apiHost:               'http://localhost:8080',
+            apiHost:               '',
             title:                 chatSettings.title,
             subtitle:              chatSettings.subtitle,
             placeholder:           chatSettings.placeholder,

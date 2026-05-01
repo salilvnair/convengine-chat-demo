@@ -31,7 +31,7 @@ function FullscreenChat() {
       <ConvEngineChat
         mode="fullscreen"
         config={{
-          apiHost:               'http://localhost:8080',
+          apiHost:               '',
           title,
           subtitle,
           placeholder,

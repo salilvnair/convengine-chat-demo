@@ -482,7 +482,7 @@ function ColorAssetInput({ configKey, label, hint, value, onChange }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Compact icon tile grid + edit modal
 // ─────────────────────────────────────────────────────────────────────────────
-function IconGrid({ iconSvgs, onIconChange, onIconReset, currentMode, accentColor = '#6366f1', iconColorSetting, previewDark = false }) {
+function IconGrid({ iconSvgs, onIconChange, onIconReset, currentMode, accentColor = '#6366f1', iconColorSetting, previewDark = false, onIconColorChange }) {
   const [editKey, setEditKey] = useState(null);
   const [copied,  setCopied]  = useState(null);
   const meta    = editKey ? ICON_META[editKey] : null;
@@ -734,6 +734,593 @@ function ColorGrid({ settings, onChange, currentMode, accentColor = '#6366f1', p
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Live Renderer Demo
+// ─────────────────────────────────────────────────────────────────────────────
+const RENDERER_DEMOS = [
+  {
+    key: 'FlightCard',
+    icon: '✈️',
+    title: 'FlightCard',
+    desc: 'Flight booking with price comparison. User selects a flight and confirms.',
+    color: 'indigo',
+    actions: ['submit → book_flight'],
+    // ── payload is FLAT — the registry passes the full top-level JSON as `payload` prop ──
+    payload: {
+      type: 'FlightCard',
+      from: 'New York (JFK)', to: 'San Francisco (SFO)', date: 'May 15, 2026',
+      flights: [
+        { id: 'f1', carrier: 'United Airlines',   departure: '06:00', arrival: '09:20', duration: '5h 20m', stops: 'Nonstop', price: '$289' },
+        { id: 'f2', carrier: 'Delta Air Lines',    departure: '09:45', arrival: '13:15', duration: '5h 30m', stops: 'Nonstop', price: '$249' },
+        { id: 'f3', carrier: 'American Airlines',  departure: '14:30', arrival: '19:50', duration: '5h 20m', stops: 'Nonstop', price: '$199' },
+      ],
+    },
+    code: `// FlightCardComponent.jsx
+// The registry parses the assistant message as JSON and passes the full
+// top-level object as the \`payload\` prop — so fields live directly on it.
+//
+// Backend returns:
+// { "type": "FlightCard", "from": "...", "to": "...", "flights": [...] }
+
+function FlightCardComponent({ payload, actions }) {
+  const [selected, setSelected] = useState(payload.flights?.[0]?.id ?? null);
+  const [booked, setBooked] = useState(false);
+  const { from, to, date, flights = [] } = payload;
+
+  if (booked) return <p>✅ Flight booked successfully!</p>;
+
+  return (
+    <div className="ce-interactive-card">
+      <p className="ce-interactive-question">{from} → {to}</p>
+      <p>{date}</p>
+
+      {flights.map((f) => (
+        <label key={f.id}>
+          <input type="radio" value={f.id}
+            checked={selected === f.id}
+            onChange={() => setSelected(f.id)} />
+          {f.carrier} · {f.departure}–{f.arrival} · {f.price}
+        </label>
+      ))}
+
+      <button className="ce-interactive-submit" disabled={!selected}
+        onClick={() => {
+          const f = flights.find((f) => f.id === selected);
+          setBooked(true);
+          // submit() adds a user bubble AND sends to your backend
+          actions.submit(\`Book \${f.carrier} at \${f.price}\`, {
+            action: 'book_flight',
+            flightId: selected,
+          });
+        }}>
+        Book Selected Flight →
+      </button>
+    </div>
+  );
+}
+
+// Register with the renderer registry
+export const flightCardRenderer = {
+  key: 'FlightCard',
+  priority: 200,
+  match: ({ effectiveType }) => effectiveType === 'FlightCard',
+  Component: FlightCardComponent,
+};
+
+// Wire into ConvEngineChat
+<ConvEngineChat config={{ renderers: [flightCardRenderer] }} />`,
+  },
+  {
+    key: 'OrderTracker',
+    icon: '📦',
+    title: 'OrderTracker',
+    desc: 'Real-time order status with visual timeline, track detail, and contact support.',
+    color: 'pink',
+    actions: ['submitSilent → track_detail', 'prefillInput → support message'],
+    // ── flat payload — orderId, product, steps are top-level fields ──
+    payload: {
+      type: 'OrderTracker',
+      orderId: 'CE-28471', product: 'MacBook Pro 14"', estimatedDelivery: 'May 3, 2026',
+      steps: [
+        { label: 'Order Placed',      date: 'Apr 29', done: true },
+        { label: 'Packed & Ready',    date: 'Apr 30', done: true },
+        { label: 'In Transit',        date: 'May 1',  done: true, current: true },
+        { label: 'Out for Delivery',  date: 'May 3',  done: false },
+        { label: 'Delivered',         date: 'May 3',  done: false },
+      ],
+    },
+    code: `// OrderTrackerComponent.jsx
+// Backend returns:
+// { "type": "OrderTracker", "orderId": "CE-28471", "product": "...",
+//   "estimatedDelivery": "...", "steps": [{ label, date, done, current? }] }
+
+function OrderTrackerComponent({ payload, actions }) {
+  const { orderId, product, estimatedDelivery, steps = [] } = payload;
+
+  return (
+    <div className="ce-interactive-card">
+      <p className="ce-interactive-question">📦 Order #{orderId}</p>
+      <p>{product} · Est. {estimatedDelivery}</p>
+
+      {steps.map((step, i) => (
+        <div key={i} style={{ fontWeight: step.current ? 700 : 400 }}>
+          {step.done ? '✓' : '○'} {step.label} · {step.date}
+        </div>
+      ))}
+
+      <button className="ce-interactive-submit"
+        onClick={() =>
+          // submitSilent() — sends to backend silently, no user bubble shown
+          actions.submitSilent({ action: 'track_detail', orderId })
+        }>
+        📍 Track in Detail
+      </button>
+
+      <button
+        onClick={() =>
+          // prefillInput() — fills the composer so the user can review & edit
+          actions.prefillInput(\`I need help with order #\${orderId}\`)
+        }>
+        💬 Contact Support
+      </button>
+    </div>
+  );
+}
+
+export const orderTrackerRenderer = {
+  key: 'OrderTracker',
+  priority: 200,
+  match: ({ effectiveType }) => effectiveType === 'OrderTracker',
+  Component: OrderTrackerComponent,
+};`,
+  },
+  {
+    key: 'ProductRecommendation',
+    icon: '🛍️',
+    title: 'ProductRecommendation',
+    desc: 'AI-curated product cards with ratings, badges, and add-to-cart actions.',
+    color: 'amber',
+    actions: ['appendBubble → cart confirmation', 'submit → show more'],
+    // ── flat payload — products array is top-level ──
+    payload: {
+      type: 'ProductRecommendation',
+      products: [
+        { id: 'p1', name: 'AirPods Pro 2nd Gen',  price: '$249', rating: 4.8, reviews: 12450, badge: 'Best Seller',  emoji: '🎧' },
+        { id: 'p2', name: 'MagSafe Charger 15W',  price: '$39',  rating: 4.6, reviews: 8230,  badge: 'Top Rated',    emoji: '🔋' },
+        { id: 'p3', name: 'iPhone 15 Pro Case',   price: '$49',  rating: 4.7, reviews: 5670,  badge: 'New Arrival',  emoji: '📱' },
+      ],
+    },
+    code: `// ProductRecommendationComponent.jsx
+// Backend returns:
+// { "type": "ProductRecommendation",
+//   "products": [{ id, name, price, rating, reviews, badge?, emoji }] }
+//
+// Flow:
+//   1. User taps "+ Cart" on any products — row highlights, button turns green.
+//      Multiple products can be added. Tapping again removes from cart.
+//   2. "Buy Now" becomes active once cart has items.
+//   3. Clicking Buy Now calls submit() which:
+//      - Shows user bubble: "Buy Now Cart Items: AirPods Pro, MacBook Pro 14\""
+//      - Sends that text + { action:'buy_now', items:[...] } to your backend
+
+function ProductRecommendationComponent({ payload, actions }) {
+  const [cart, setCart] = useState({});   // { [id]: true } — toggled
+  const [bought, setBought] = useState(false);
+  const { products = [] } = payload;
+
+  function toggleCart(p) {
+    setCart((prev) => ({ ...prev, [p.id]: !prev[p.id] }));
+  }
+
+  function buyNow() {
+    const selected = products.filter((p) => cart[p.id]);
+    if (!selected.length) return;
+    const itemList = selected.map((p) => p.name).join(', ');
+    setBought(true);
+    // submit() — appends user bubble + sends to backend
+    actions.submit(\`Buy Now Cart Items: \${itemList}\`, {
+      action: 'buy_now',
+      items: selected.map((p) => ({ id: p.id, name: p.name, price: p.price })),
+    });
+  }
+
+  const cartCount = Object.values(cart).filter(Boolean).length;
+
+  return (
+    <div className="ce-interactive-card">
+      <p className="ce-interactive-question">🛍️ Recommended for you</p>
+
+      {products.map((p) => {
+        const inCart = !!cart[p.id];
+        return (
+          <div key={p.id}
+            style={{ border: \`1.5px solid \${inCart ? 'var(--ce-color-accent)' : 'var(--ce-border)'}\` }}>
+            <span>{p.emoji} {p.name} · {p.price}</span>
+            <span>⭐ {p.rating} · {p.reviews.toLocaleString()} reviews</span>
+
+            {/* + Cart toggles the item in/out of cart */}
+            <button onClick={() => toggleCart(p)}>
+              {inCart ? '✓ Added' : '+ Cart'}
+            </button>
+          </div>
+        );
+      })}
+
+      {/* Buy Now — active only when cart has items */}
+      <button
+        className="ce-interactive-submit"
+        disabled={cartCount === 0 || bought}
+        onClick={buyNow}>
+        {bought ? '✓ Order Placed' : \`🛢 Buy Now\${cartCount > 0 ? \` (\${cartCount})\` : ''}\`}
+      </button>
+    </div>
+  );
+}
+
+export const productRecommendationRenderer = {
+  key: 'ProductRecommendation',
+  priority: 200,
+  match: ({ effectiveType }) => effectiveType === 'ProductRecommendation',
+  Component: ProductRecommendationComponent,
+};`,
+  },
+  {
+    key: 'DataTable',
+    icon: '📊',
+    title: 'DataTable',
+    desc: 'Renders structured data as a styled card table. hideBubble:true removes the bubble shell — the card controls its own presentation.',
+    color: 'emerald',
+    actions: [],
+    // ── pre-parsed payload (no nested .payload — fields are top-level) ──
+    payload: {
+      type: 'DataTable',
+      title: 'Q1 Sales Summary',
+      caption: 'Source: internal CRM · Updated Apr 30 2026',
+      headers: ['Product', 'Region', 'Units Sold', 'Revenue', 'Growth'],
+      rows: [
+        ['AirPods Pro',        'North America', '42,150', '$10.5M', '+18%'],
+        ['MacBook Pro 14"',    'North America', '18,200', '$36.4M', '+12%'],
+        ['iPhone 15 Pro',      'Europe',        '61,400', '$73.7M', '+9%'],
+        ['Apple Watch Ultra',  'Asia Pacific',  '12,800', '$16.6M', '+31%'],
+        ['iPad Pro',           'North America', '23,900', '$21.5M', '+5%'],
+      ],
+    },
+    code: `// DataTableComponent.jsx
+// A custom renderer that renders structured data as a styled table card.
+//
+// Key feature: hideBubble: true — skips the surrounding bubble shell.
+// The ce-data-table-card element controls its own border/shadow/radius.
+//
+// Backend returns Option A (pre-parsed arrays):
+// { "type": "DataTable", "title": "Q1 Sales",
+//   "headers": ["Product", "Revenue"],
+//   "rows":    [["AirPods Pro", "$10.5M"], ...],
+//   "caption": "Source: internal CRM" }
+//
+// Backend returns Option B (raw markdown table):
+// { "type": "DataTable", "title": "Q1 Sales",
+//   "markdown": "| Product | Revenue |\\n|---|---|\\n| AirPods Pro | $10.5M |" }
+
+// ── Optional: import the helper from the library (also available) ──────────
+// import { parseAssistantSegments, prettifyHeader } from '@salilvnair/convengine-chat';
+
+/** Inline markdown table parser — use instead of the import if you prefer */
+function parseMdTable(markdown) {
+  const lines = markdown.trim().split(/\\r?\\n/);
+  const isSep = (l) => /^\\|?\\s*:?-{3,}:?\\s*(\\|\\s*:?-{3,}:?\\s*)*\\|?$/.test(l.trim());
+  const splitRow = (l) => l.trim().replace(/^\\|/, '').replace(/\\|$/, '').split('|').map((c) => c.trim());
+  let hi = lines.findIndex((l, i) => l.includes('|') && i + 1 < lines.length && isSep(lines[i + 1]));
+  if (hi === -1) return null;
+  const headers = splitRow(lines[hi]);
+  const rows = [];
+  for (let i = hi + 2; i < lines.length; i++) {
+    if (!lines[i].includes('|') || !lines[i].trim()) break;
+    rows.push(splitRow(lines[i]));
+  }
+  return { headers, rows };
+}
+
+function DataTableComponent({ payload }) {
+  const { title, caption, markdown } = payload;
+  let { headers, rows } = payload;
+
+  // Parse markdown if pre-parsed arrays not provided
+  if (markdown && !headers) {
+    const parsed = parseMdTable(markdown);
+    if (parsed) { headers = parsed.headers; rows = parsed.rows; }
+  }
+
+  return (
+    // ce-data-table-card is the standalone card shell (no bubble around it)
+    <div className="ce-data-table-card">
+      <div className="ce-data-table-header">
+        {title && <span className="ce-data-table-title">{title}</span>}
+        <span className="ce-data-table-count">{rows.length} rows</span>
+      </div>
+
+      {/* ce-table-wrap / ce-table / ce-table-th / ce-table-td are built-in */}
+      <div className="ce-table-wrap">
+        <table className="ce-table">
+          <thead>
+            <tr>
+              {headers.map((h, i) => (
+                // prettifyCol converts snake_case / camelCase → Title Case
+                <th key={i} className="ce-table-th">{prettifyCol(h)}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr key={ri} className="ce-table-tr">
+                {row.map((cell, ci) => (
+                  <td key={ci} className="ce-table-td">{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {caption && <div className="ce-data-table-caption">{caption}</div>}
+    </div>
+  );
+}
+
+// hideBubble: true  →  AssistantMessage skips the bubble wrapper entirely.
+// The card's ce-data-table-card CSS controls border / shadow / radius.
+export const dataTableRenderer = {
+  key: 'DataTable',
+  priority: 200,
+  hideBubble: true,
+  match: ({ effectiveType }) => effectiveType === 'DataTable',
+  Component: DataTableComponent,
+};
+
+// ── Custom CSS (add to your app stylesheet) ─────────────────────────────
+// All rules are scoped under .ce-chat-root — no global leakage.
+//
+// /* Card shell */
+// .ce-chat-root .ce-data-table-card {
+//   background: var(--ce-bg-panel);
+//   border: 1px solid var(--ce-border-color);
+//   border-radius: 14px;
+//   overflow: hidden;
+//   box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07);
+// }
+//
+// /* Header strip above the table */
+// .ce-chat-root .ce-data-table-header {
+//   padding: 10px 14px;
+//   background: var(--ce-bg-header);
+//   border-bottom: 1px solid var(--ce-border-color);
+// }
+//
+// /* Accent hover on body rows */
+// .ce-chat-root .ce-data-table-card .ce-table-tr:hover {
+//   background: rgba(99, 102, 241, 0.05);
+// }
+//
+// /* Override card look for a specific renderer */
+// .ce-chat-root .ce-data-table-card.my-custom-variant {
+//   border-color: #10b981;
+// }
+
+<ConvEngineChat config={{ renderers: [dataTableRenderer] }} />`,
+  },
+  {
+    key: 'CompleteForm',
+    icon: '📋',
+    title: 'CompleteForm',
+    desc: 'Multi-field registration form with text inputs, dropdown, radio, checkbox, file upload, and date picker.',
+    color: 'emerald',
+    actions: ['submit → form_submit (sends all field values)'],
+    payload: {
+      type: 'CompleteForm',
+      title: 'Tell us about yourself',
+    },
+    code: `// CompleteFormComponent.jsx
+// Backend returns:
+// { "type": "CompleteForm", "title": "Tell us about yourself" }
+// On submit, actions.submit() sends a user bubble with all field values
+// and your backend returns an "Information Collected" confirmation.
+
+const COUNTRIES = ['United States','United Kingdom','Canada','Australia','India','Other'];
+const SEX_OPTIONS = ['Male','Female','Non-binary','Prefer not to say'];
+
+function CompleteFormComponent({ payload, actions }) {
+  const { title = 'Tell us about yourself' } = payload;
+  const [form, setForm] = useState({
+    firstname: '', lastname: '', country: '', sex: '',
+    acceptTerms: false, photo: null, dob: '',
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  function set(field, value) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => { const n = { ...e }; delete n[field]; return n; });
+  }
+
+  function handleSubmit() {
+    const e = {};
+    if (!form.firstname.trim()) e.firstname = 'Required';
+    if (!form.lastname.trim())  e.lastname  = 'Required';
+    if (!form.country)          e.country   = 'Required';
+    if (!form.sex)              e.sex       = 'Required';
+    if (!form.acceptTerms)      e.acceptTerms = 'You must accept the terms';
+    if (!form.dob)              e.dob       = 'Required';
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setSubmitted(true);
+    const parts = [
+      \`\${form.firstname} \${form.lastname}\`,
+      form.country,
+      form.sex,
+      form.acceptTerms ? 'Terms Accepted' : 'Terms Not Accepted',
+      form.photo ? form.photo.name : 'No photo',
+      \`DOB: \${form.dob}\`,
+    ];
+    // submit() adds a user bubble AND sends text + inputParams to your backend
+    actions.submit(\`Form Submitted: \${parts.join(', ')}\`, {
+      action: 'form_submit',
+      formData: { ...form, photo: form.photo ? form.photo.name : null },
+    });
+  }
+
+  if (submitted) return <p>✅ Form submitted! Awaiting confirmation…</p>;
+
+  return (
+    <div className="ce-interactive-card">
+      <p className="ce-interactive-question">{title}</p>
+
+      {/* First + Last name */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <label>First Name</label>
+          <input value={form.firstname} onChange={(e) => set('firstname', e.target.value)} placeholder="Jane" />
+          {errors.firstname && <p style={{ color: 'red' }}>{errors.firstname}</p>}
+        </div>
+        <div style={{ flex: 1 }}>
+          <label>Last Name</label>
+          <input value={form.lastname} onChange={(e) => set('lastname', e.target.value)} placeholder="Doe" />
+          {errors.lastname && <p style={{ color: 'red' }}>{errors.lastname}</p>}
+        </div>
+      </div>
+
+      {/* Country dropdown */}
+      <select value={form.country} onChange={(e) => set('country', e.target.value)}>
+        <option value="">Select country…</option>
+        {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
+
+      {/* Sex radio */}
+      {SEX_OPTIONS.map((opt) => (
+        <label key={opt}>
+          <input type="radio" name="sex" value={opt}
+            checked={form.sex === opt} onChange={() => set('sex', opt)} />
+          {opt}
+        </label>
+      ))}
+
+      {/* DOB calendar */}
+      <input type="date" value={form.dob}
+        max={new Date().toISOString().split('T')[0]}
+        onChange={(e) => set('dob', e.target.value)} />
+
+      {/* Photo upload */}
+      <input type="file" accept="image/*"
+        onChange={(e) => set('photo', e.target.files?.[0] ?? null)} />
+
+      {/* Accept terms checkbox */}
+      <label>
+        <input type="checkbox" checked={form.acceptTerms}
+          onChange={(e) => set('acceptTerms', e.target.checked)} />
+        I accept the terms and conditions
+      </label>
+      {errors.acceptTerms && <p style={{ color: 'red' }}>{errors.acceptTerms}</p>}
+
+      <button className="ce-interactive-submit" onClick={handleSubmit}>
+        Submit →
+      </button>
+    </div>
+  );
+}
+
+export const completeFormRenderer = {
+  key: 'CompleteForm',
+  priority: 200,
+  hideBubble: true,
+  match: ({ effectiveType }) => effectiveType === 'CompleteForm',
+  Component: CompleteFormComponent,
+};
+
+// Wire into ConvEngineChat
+<ConvEngineChat config={{ renderers: [completeFormRenderer] }} />`,
+  },
+];
+
+const COLOR_BG = { indigo: 'bg-indigo-50 border-indigo-100', pink: 'bg-pink-50 border-pink-100', amber: 'bg-amber-50 border-amber-100', emerald: 'bg-emerald-50 border-emerald-100' };
+const COLOR_BADGE = { indigo: 'bg-indigo-100 text-indigo-700', pink: 'bg-pink-100 text-pink-700', amber: 'bg-amber-100 text-amber-700', emerald: 'bg-emerald-100 text-emerald-700' };
+const COLOR_BTN = { indigo: 'bg-indigo-500 hover:bg-indigo-600', pink: 'bg-pink-500 hover:bg-pink-600', amber: 'bg-amber-500 hover:bg-amber-600', emerald: 'bg-emerald-500 hover:bg-emerald-600' };
+
+function RendererLiveDemo({ chatActionsRef }) {
+  const [injected, setInjected] = useState({});
+  const [expanded, setExpanded] = useState({});
+
+  function tryDemo(demo) {
+    if (!chatActionsRef?.current?.appendBubble) {
+      alert('Open the chat widget first — click the chat bubble in the corner of the page!');
+      return;
+    }
+    chatActionsRef.current.appendBubble(JSON.stringify(demo.payload));
+    setInjected((prev) => ({ ...prev, [demo.key]: true }));
+    setTimeout(() => setInjected((prev) => ({ ...prev, [demo.key]: false })), 2000);
+  }
+
+  return (
+    <div className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 to-cyan-50 p-4 space-y-3">
+      <div className="flex items-start gap-2">
+        <span className="text-lg mt-0.5">🚀</span>
+        <div>
+          <p className="text-sm font-bold text-teal-800">Live Renderer Demo</p>
+          <p className="text-xs text-teal-600 mt-0.5">
+            Click <strong>▶ Try it</strong> to inject a renderer payload directly into the chat widget via{' '}
+            <code className="font-mono bg-teal-100 px-1 rounded">appendBubble</code>.
+            In production, your backend returns the same JSON shape.
+            Expand <strong>&lt;/&gt; View code</strong> to see the full implementation.
+          </p>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {RENDERER_DEMOS.map((demo) => (
+          <div key={demo.key} className={`rounded-xl border overflow-hidden ${COLOR_BG[demo.color]}`}>
+            {/* ── Header row ── */}
+            <div className="flex items-start justify-between gap-3 p-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-bold text-slate-700">{demo.icon} {demo.title}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${COLOR_BADGE[demo.color]}`}>
+                    type: &quot;{demo.key}&quot;
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">{demo.desc}</p>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {demo.actions.map((a) => (
+                    <code key={a} className="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded text-slate-500">{a}</code>
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => tryDemo(demo)}
+                  className={`text-xs font-bold px-3 py-2 rounded-lg text-white transition-all ${COLOR_BTN[demo.color]} ${injected[demo.key] ? 'opacity-75' : ''}`}
+                >
+                  {injected[demo.key] ? '✓ Sent!' : '▶ Try it'}
+                </button>
+                <button
+                  onClick={() => setExpanded((p) => ({ ...p, [demo.key]: !p[demo.key] }))}
+                  className="text-[11px] font-mono font-semibold px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  {expanded[demo.key] ? '▲ Hide code' : '</> View code'}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Expandable code section ── */}
+            {expanded[demo.key] && (
+              <div className="border-t border-slate-200">
+                <CodeBlock code={demo.code} lang="jsx" />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="text-[10px] text-teal-500">
+        💡 The registry parses the assistant message as JSON, reads <code className="font-mono bg-teal-100 px-1 rounded">type</code>, and routes to the first provider whose <code className="font-mono bg-teal-100 px-1 rounded">match()</code> returns true.
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Playground
 // ─────────────────────────────────────────────────────────────────────────────
 function buildGeneratedCode(settings, iconSvgs) {
@@ -764,7 +1351,7 @@ function buildGeneratedCode(settings, iconSvgs) {
   const iconsSnippet = changedIcons.length
     ? `\n    icons: {\n${changedIcons.map(k => `      // custom ${k} \u2014 replace with your React component\n      ${k}: My${k},`).join('\n')}\n    },`
     : '';
-  return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n    apiHost: "http://localhost:8080",\n    showFeedback: ${settings.showFeedback},\n    showAudit: ${settings.showAudit},\n    showDarkModeLightMode: ${settings.showDarkModeLightMode},${extras ? '\n' + extras : ''}${iconsSnippet}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
+  return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n    apiHost: "http://localhost:8080",\n    showFeedback: ${settings.showFeedback},\n    showAudit: ${settings.showAudit},\n    showEngineStatus: ${settings.showEngineStatus ?? true},\n    showDarkModeLightMode: ${settings.showDarkModeLightMode},${extras ? '\n' + extras : ''}${iconsSnippet}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
 }
 
 function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconReset }) {
@@ -808,6 +1395,7 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Toggle checked={settings.showFeedback}          onChange={(v) => onChange({ ...settings, showFeedback: v })}          label="Show Feedback (👍👎)"   hint="config.showFeedback"          modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
           {showFor('fullscreen') && <Toggle checked={settings.showAudit}             onChange={(v) => onChange({ ...settings, showAudit: v })}             label="Show Audit Trail"       hint="config.showAudit"             modes={['fullscreen']} accentColor={settings.accentColor} />}
+          {showFor('fullscreen') && <Toggle checked={settings.showEngineStatus ?? true} onChange={(v) => onChange({ ...settings, showEngineStatus: v })} label="Engine Status Bar"      hint="config.showEngineStatus"      modes={['fullscreen']} accentColor={settings.accentColor} />}
           <Toggle checked={settings.showDarkModeLightMode} onChange={(v) => onChange({ ...settings, showDarkModeLightMode: v })} label="Dark/Light Mode Toggle" hint="config.showDarkModeLightMode" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
           <Toggle checked={settings.showHeaderDot}       onChange={(v) => onChange({ ...settings, showHeaderDot: v })}       label="Header Dot"         hint="config.showHeaderDot"       modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
           <Toggle checked={settings.showLandingAvatar}   onChange={(v) => onChange({ ...settings, showLandingAvatar: v })}   label="Landing Avatar"     hint="config.showLandingAvatar"   modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
@@ -949,7 +1537,8 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
           <ColorGrid settings={settings} onChange={onChange} currentMode={normalizedMode} accentColor={settings.accentColor} previewDark={settings.previewDark} />
         </div>
 
-        <IconGrid iconSvgs={iconSvgs} onIconChange={onIconChange} onIconReset={onIconReset} currentMode={normalizedMode} accentColor={settings.accentColor} iconColorSetting={settings.iconColor} previewDark={settings.previewDark} />
+        <IconGrid iconSvgs={iconSvgs} onIconChange={onIconChange} onIconReset={onIconReset} currentMode={normalizedMode} accentColor={settings.accentColor} iconColorSetting={settings.iconColor} previewDark={settings.previewDark}
+          onIconColorChange={(variant, color) => onChange({ ...settings, iconColor: { ...settings.iconColor, [variant]: color } })} />
 
       </div>
     </div>
@@ -994,10 +1583,11 @@ function NavDot({ href, children }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Main view
 // ─────────────────────────────────────────────────────────────────────────────
-export function ChatSettingsView({ onSettingsChange, hideHeader = false }) {
+export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatActionsRef = null }) {
   const [settings, setSettings] = useState({
     showFeedback:          true,
     showAudit:             false,
+    showEngineStatus:      true,
     showDarkModeLightMode: true,
     chatMode:              'panel',
     accentColor:           '#6366f1',
@@ -1092,6 +1682,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false }) {
           <NavDot href="#config">config Object</NavDot>
           <NavDot href="#colors">Color Theming</NavDot>
           <NavDot href="#theme">Theme Tokens</NavDot>
+          <NavDot href="#tailwind">Tailwind Integration</NavDot>
           <NavDot href="#icons">Custom Icons</NavDot>
           <NavDot href="#renderers">Custom Renderers</NavDot>
           <NavDot href="#actions">Actions API</NavDot>
@@ -1192,6 +1783,7 @@ const myRenderer = {
     // ── Visibility flags ────────────────────────────────────────────────
     showFeedback:          true,   // 👍👎 row under every AI message
     showAudit:             false,  // audit trail side panel
+    showEngineStatus:      true,   // intent/state/time bar (fullscreen only)
     showDarkModeLightMode: false,  // 🌙/☀️ toggle button in header
     showHeaderDot:         true,   // pulsing dot next to title
     showLandingAvatar:     true,   // bot avatar on landing screen
@@ -1291,6 +1883,7 @@ const myRenderer = {
                 <PropRow prop="placeholder"           type='string'   defaultVal='"Ask ConvEngine…"'                           description='Composer input placeholder text.' />
                 <PropRow prop="showFeedback"          type='boolean'  defaultVal='true'                                        description='Show 👍👎 feedback buttons under assistant messages.' />
                 <PropRow prop="showAudit"             type='boolean'  defaultVal='false'                                       description='Show the audit trail side panel.' />
+                <PropRow prop="showEngineStatus"      type='boolean'  defaultVal='true'                                        description='Show the engine status bar (intent, state, response time) in fullscreen mode.' />
                 <PropRow prop="showDarkModeLightMode" type='boolean'  defaultVal='false'                                       description='Show the dark/light mode toggle button in the header.' />
                 <PropRow prop="showHeaderDot"         type='boolean'  defaultVal='true'                                        description='Show the pulsing accent dot next to the header title.' />
                 <PropRow prop="showLandingAvatar"     type='boolean'  defaultVal='true'                                        description='Show the bot avatar icon on the landing screen.' />
@@ -1469,6 +2062,86 @@ const myRenderer = {
             </DocCardBody>
           </DocCard>
 
+          {/* Tailwind Integration */}
+          <DocCard id="tailwind">
+            <SectionHeader gradient="bg-gradient-to-r from-sky-500 to-cyan-500" icon="🌊" title="Tailwind Integration" subtitle="Use ConvEngine design tokens as Tailwind utility classes" />
+            <DocCardBody>
+              <Tip color="sky" icon="💡" title="What this enables">
+                By aliasing ConvEngine&apos;s CSS custom properties in <code className="font-mono text-xs bg-sky-100 px-1 rounded">tailwind.config.js</code>, you can
+                write <code className="font-mono text-xs bg-sky-100 px-1 rounded">text-brand</code> or <code className="font-mono text-xs bg-sky-100 px-1 rounded">bg-brand</code> in your own components and they
+                will automatically react to whatever accent color you pass to ConvEngine — no manual sync needed.
+              </Tip>
+
+              {/* ── Step 1 ─────────────────────────────────────────────── */}
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 1 — Extend tailwind.config.js</p>
+                <p className="text-xs text-slate-500">Map any ConvEngine CSS token to a Tailwind color / spacing alias.</p>
+              </div>
+              <CodeBlock lang="js" code={`// tailwind.config.js\nmodule.exports = {\n  content: ['./src/**/*.{js,jsx,ts,tsx}'],\n  theme: {\n    extend: {\n      colors: {\n        // Accent — mirrors whatever you pass to ConvEngineChat\n        brand:         'var(--ce-color-accent)',\n        'brand-hover': 'var(--ce-color-accent-hover)',\n\n        // Chat bubble fills\n        'chat-user':  'var(--ce-bg-bubble-user)',\n        'chat-agent': 'var(--ce-bg-bubble-agent)',\n\n        // Panel surface\n        'chat-panel': 'var(--ce-bg-panel)',\n      },\n      fontFamily: {\n        chat: 'var(--ce-font-family)',\n      },\n    },\n  },\n};`} />
+
+              {/* ── Step 2 ─────────────────────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 2 — Use the aliases in your components</p>
+                <p className="text-xs text-slate-500">No hard-coded hex values — colors inherit from the live CSS variable.</p>
+              </div>
+              <CodeBlock lang="jsx" code={`// Any component co-located with the chat widget\nexport function AskButton({ onClick }) {\n  return (\n    <button\n      onClick={onClick}\n      className="bg-brand hover:bg-brand-hover text-white font-semibold\n                 px-5 py-2.5 rounded-xl transition-colors"\n    >\n      Ask ConvEngine →\n    </button>\n  );\n}\n\n// Sidebar badge that matches the accent\nexport function UnreadBadge({ count }) {\n  return (\n    <span className="bg-brand text-white text-xs font-bold\n                     w-5 h-5 rounded-full flex items-center justify-center"\n    >\n      {count}\n    </span>\n  );\n}`} />
+
+              {/* ── Step 3 ─────────────────────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 3 — Change the accent once, everything updates</p>
+                <p className="text-xs text-slate-500">
+                  Pass a new accent to ConvEngine via the <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">theme</code> prop.
+                  Your Tailwind components update automatically — they read the same CSS variable.
+                </p>
+              </div>
+              <CodeBlock lang="jsx" code={`// Changing the accent in ConvEngineChat...\n<ConvEngineChat\n  theme={{ 'color-accent': '#10b981', 'color-accent-hover': '#059669' }}\n/>\n\n// ...automatically updates bg-brand / text-brand everywhere in your app.\n// The AskButton above will now render in emerald — zero extra work.`} />
+
+              {/* ── Token reference ─────────────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">All mappable tokens</p>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-slate-100">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs uppercase text-slate-400 tracking-wider">
+                      <th className="px-4 py-3 text-left font-bold">CSS Variable</th>
+                      <th className="px-4 py-3 text-left font-bold">Suggested Tailwind alias</th>
+                      <th className="px-4 py-3 text-left font-bold">Utilities unlocked</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 bg-white">
+                    {[
+                      ['--ce-color-accent',       'brand',        'bg-brand  text-brand  border-brand  ring-brand'],
+                      ['--ce-color-accent-hover',  'brand-hover',  'hover:bg-brand-hover  hover:text-brand-hover'],
+                      ['--ce-bg-bubble-user',      'chat-user',    'bg-chat-user  text-chat-user'],
+                      ['--ce-bg-bubble-agent',     'chat-agent',   'bg-chat-agent  text-chat-agent'],
+                      ['--ce-bg-panel',            'chat-panel',   'bg-chat-panel'],
+                      ['--ce-font-family',         'font-chat (fontFamily)',  'font-chat'],
+                    ].map(([token, alias, utilities]) => (
+                      <tr key={token} className="hover:bg-sky-50/40">
+                        <td className="px-4 py-2.5 font-mono text-xs text-sky-600 font-semibold">{token}</td>
+                        <td className="px-4 py-2.5"><code className="font-mono text-xs bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">{alias}</code></td>
+                        <td className="px-4 py-2.5 text-xs text-slate-500 font-mono">{utilities}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Real-world example ───────────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Real-world example — branded notification banner</p>
+                <p className="text-xs text-slate-500">A contextual banner that matches the active chat accent with zero hard-coded colors.</p>
+              </div>
+              <CodeBlock lang="jsx" code={`export function ChatNotificationBanner({ message, onOpen }) {\n  return (\n    <div className="\n      bg-brand/10 border border-brand/30\n      rounded-2xl px-4 py-3 flex items-center gap-3\n    ">\n      <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />\n      <p className="flex-1 text-sm text-brand font-medium">{message}</p>\n      <button\n        onClick={onOpen}\n        className="\n          bg-brand hover:bg-brand-hover text-white\n          text-xs font-bold px-3 py-1.5 rounded-lg transition-colors\n        "\n      >\n        Open chat\n      </button>\n    </div>\n  );\n}\n\n// Usage alongside ConvEngineChat\n<ChatNotificationBanner\n  message="ConvEngine has a response for you"\n  onOpen={() => chatActionsRef.current?.prefillInput('')}\n/>`} />
+
+              <Tip color="amber" icon="⚠️" title="Tailwind v4 note">
+                In Tailwind v4, use <code className="font-mono text-xs bg-amber-100 px-1 rounded">@theme</code> in your CSS instead of <code className="font-mono text-xs bg-amber-100 px-1 rounded">tailwind.config.js</code>:{' '}
+                <code className="font-mono text-xs bg-amber-100 px-1 rounded">{'@theme { --color-brand: var(--ce-color-accent); }'}</code>
+              </Tip>
+            </DocCardBody>
+          </DocCard>
+
           {/* Custom Renderers */}
           <DocCard id="renderers">
             <SectionHeader gradient="bg-gradient-to-r from-teal-500 to-cyan-600" icon="🔌" title="Custom Renderers" subtitle="Intercept assistant messages and render rich interactive UI" />
@@ -1479,11 +2152,18 @@ const myRenderer = {
                 <FeatureChip label="Inline form" color="violet" />
                 <FeatureChip label="File upload" color="orange" />
                 <FeatureChip label="Confirm step" color="emerald" />
+                <FeatureChip label="✈️ FlightCard" color="indigo" />
+                <FeatureChip label="📦 OrderTracker" color="pink" />
+                <FeatureChip label="🛍️ ProductRecommendation" color="amber" />
+                <FeatureChip label="📊 DataTable (hideBubble)" color="emerald" />
               </div>
               <Tip color="green" icon="🏗️" title="How the registry works">
                 Providers are sorted by <code className="font-mono text-xs bg-emerald-100 px-1 rounded">priority</code> (highest first). The first whose <code className="font-mono text-xs bg-emerald-100 px-1 rounded">match(ctx)</code> returns true wins. Built-ins have priority 100.
               </Tip>
               <CodeBlock lang="jsx" code={`// SelectionPromptRenderer.jsx\nexport function SelectionPromptRenderer({ payload, actions }) {\n  const [selected, setSelected] = useState(null);\n  return (\n    <div className="ce-interactive-card">\n      <p>{payload.question}</p>\n      {payload.options.map((o) => (\n        <label key={o.value}>\n          <input type="radio" value={o.value}\n            checked={selected === o.value}\n            onChange={() => setSelected(o.value)} />\n          {o.label}\n        </label>\n      ))}\n      <button disabled={!selected}\n        onClick={() => actions.submit(selected, { choice: selected })}>\n        Continue →\n      </button>\n    </div>\n  );\n}\n\n// Register it\nconst myProvider = {\n  key:      'SelectionPrompt',\n  priority: 200,\n  match:    (ctx) => ctx.effectiveType === 'SelectionPrompt',\n  Component: SelectionPromptRenderer,\n};\n\n<ConvEngineChat config={{ renderers: [myProvider] }} />`} />
+
+              {/* ── Live Renderer Demo ───────────────────────────────────── */}
+              <RendererLiveDemo chatActionsRef={chatActionsRef} />
             </DocCardBody>
           </DocCard>
 
