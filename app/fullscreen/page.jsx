@@ -12,7 +12,8 @@ function FullscreenChat() {
   const params   = useSearchParams();
   const accent   = params.get('accent')   ?? '#6366f1';
   const feedback = params.get('feedback') !== 'false';
-  const audit    = params.get('audit')    === 'true';
+  const audit        = params.get('audit')        === 'true';
+  const engineStatus = params.get('engineStatus') !== 'false';
   const darkMode = params.get('darkMode') !== 'false';
   const title         = params.get('title')       || 'ConvEngine Assistant';
   const subtitle      = params.get('subtitle')    || "Ask me anything — I'll do my best to help.";
@@ -37,6 +38,7 @@ function FullscreenChat() {
           placeholder,
           showFeedback:          feedback,
           showAudit:             audit,
+          showEngineStatus:      engineStatus,
           showDarkModeLightMode: darkMode,
           showHeaderDot:         headerDot,
           showLandingAvatar:     landingAvatar,

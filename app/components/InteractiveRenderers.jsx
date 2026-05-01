@@ -521,7 +521,7 @@ export const dataTableRenderer = {
 
 /* ── CompleteForm ─────────────────────────────────────────────────────────── */
 const COUNTRIES = ['United States','United Kingdom','Canada','Australia','India','Germany','France','Singapore','Japan','Other'];
-const SEX_OPTIONS = ['Male','Female','Non-binary','Prefer not to say'];
+const GENDER_OPTIONS = ['Male','Female','Non-binary','Prefer not to say'];
 
 // ── Custom Dropdown ──────────────────────────────────────────────────────────
 function CFDropdown({ value, onChange, options, placeholder, error }) {
@@ -820,7 +820,7 @@ function CFCalendar({ value, onChange, error }) {
 function CompleteFormComponent({ payload, actions }) {
   const { title = 'Tell us about yourself' } = payload;
   const [form, setForm] = useState({
-    firstname: '', lastname: '', country: '', sex: '',
+    firstname: '', lastname: '', country: '', gender: '',
     acceptTerms: false, photo: null, dob: '',
   });
   const [submitted, setSubmitted] = useState(false);
@@ -836,7 +836,7 @@ function CompleteFormComponent({ payload, actions }) {
     if (!form.firstname.trim()) e.firstname = 'Required';
     if (!form.lastname.trim())  e.lastname  = 'Required';
     if (!form.country)          e.country   = 'Required';
-    if (!form.sex)              e.sex       = 'Required';
+    if (!form.gender)           e.gender    = 'Required';
     if (!form.acceptTerms)      e.acceptTerms = 'You must accept the terms';
     if (!form.dob)              e.dob       = 'Required';
     return e;
@@ -849,7 +849,7 @@ function CompleteFormComponent({ payload, actions }) {
     const parts = [
       `${form.firstname} ${form.lastname}`,
       form.country,
-      form.sex,
+      form.gender,
       form.acceptTerms ? 'Terms Accepted' : 'Terms Not Accepted',
       form.photo ? form.photo.name : 'No photo',
       `DOB: ${form.dob}`,
@@ -910,14 +910,14 @@ function CompleteFormComponent({ payload, actions }) {
         {errors.country && <p style={errStyle}>{errors.country}</p>}
       </div>
 
-      {/* Sex — styled radio pills */}
+      {/* Gender — styled radio pills */}
       <div>
-        <label style={labelStyle}>Sex</label>
+        <label style={labelStyle}>Gender</label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {SEX_OPTIONS.map((opt) => {
-            const active = form.sex === opt;
+          {GENDER_OPTIONS.map((opt) => {
+            const active = form.gender === opt;
             return (
-              <button key={opt} type="button" onClick={() => set('sex', opt)}
+              <button key={opt} type="button" onClick={() => set('gender', opt)}
                 style={{
                   padding: '5px 12px', fontSize: 12, borderRadius: 20, cursor: 'pointer',
                   fontWeight: active ? 700 : 400, transition: 'all 0.15s',
@@ -930,7 +930,7 @@ function CompleteFormComponent({ payload, actions }) {
             );
           })}
         </div>
-        {errors.sex && <p style={errStyle}>{errors.sex}</p>}
+        {errors.gender && <p style={errStyle}>{errors.gender}</p>}
       </div>
 
       {/* Date of Birth — custom calendar */}

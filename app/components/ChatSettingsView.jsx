@@ -755,11 +755,30 @@ const RENDERER_DEMOS = [
       ],
     },
     code: `// FlightCardComponent.jsx
-// The registry parses the assistant message as JSON and passes the full
-// top-level object as the \`payload\` prop — so fields live directly on it.
+// ── How data flows to your backend ────────────────────────────────────────
+// 1. YOUR BACKEND returns this JSON as the assistant response:
+//    { "type": "FlightCard", "from": "New York (JFK)", "to": "San Francisco (SFO)",
+//      "flights": [{ id, carrier, departure, arrival, duration, stops, price }] }
+//    ConvEngine detects "type", finds your renderer, and passes the full
+//    JSON object as the \`payload\` prop to your component.
 //
-// Backend returns:
-// { "type": "FlightCard", "from": "...", "to": "...", "flights": [...] }
+// 2. USER selects a flight row and clicks "Book Selected Flight →"
+//
+// 3. Your component calls:
+//    actions.submit("Book Delta Air Lines at $249", {
+//      action: "book_flight",
+//      flightId: "f2"
+//    });
+//
+// 4. ConvEngine does two things atomically:
+//    a) Appends a user chat bubble: "Book Delta Air Lines at $249"
+//    b) POSTs to your /chat endpoint:
+//       { text: "Book Delta Air Lines at $249",
+//         inputParams: { action: "book_flight", flightId: "f2" } }
+//
+// 5. YOUR BACKEND reads inputParams.action === "book_flight", processes the
+//    booking for flightId "f2", and returns a confirmation message.
+// ─────────────────────────────────────────────────────────────────────────
 
 function FlightCardComponent({ payload, actions }) {
   const [selected, setSelected] = useState(payload.flights?.[0]?.id ?? null);
@@ -829,9 +848,26 @@ export const flightCardRenderer = {
       ],
     },
     code: `// OrderTrackerComponent.jsx
-// Backend returns:
-// { "type": "OrderTracker", "orderId": "CE-28471", "product": "...",
-//   "estimatedDelivery": "...", "steps": [{ label, date, done, current? }] }
+// ── How data flows to your backend ────────────────────────────────────────
+// 1. YOUR BACKEND returns this JSON as the assistant response:
+//    { "type": "OrderTracker", "orderId": "CE-28471", "product": "MacBook Pro 14\"",
+//      "estimatedDelivery": "May 3, 2026",
+//      "steps": [{ label, date, done, current? }] }
+//    ConvEngine passes it as the \`payload\` prop to your component.
+//
+// Two buttons demonstrate two different actions:
+//
+// "Track in Detail" → actions.submitSilent({ action: 'track_detail', orderId })
+//   • NO user bubble is shown in the chat (silent / invisible)
+//   • Immediately POSTs to /chat:
+//     { inputParams: { action: "track_detail", orderId: "CE-28471" } }
+//   • YOUR BACKEND detects action === "track_detail" and returns a detail card.
+//
+// "Contact Support" → actions.prefillInput(`I need help with order #${orderId}`)
+//   • Fills the chat composer with the string — NOTHING is sent yet
+//   • USER reviews/edits the pre-filled text and presses Send manually
+//   • Only then does ConvEngine POST to your /chat endpoint with the final text
+// ─────────────────────────────────────────────────────────────────────────
 
 function OrderTrackerComponent({ payload, actions }) {
   const { orderId, product, estimatedDelivery, steps = [] } = payload;
@@ -890,17 +926,30 @@ export const orderTrackerRenderer = {
       ],
     },
     code: `// ProductRecommendationComponent.jsx
-// Backend returns:
-// { "type": "ProductRecommendation",
-//   "products": [{ id, name, price, rating, reviews, badge?, emoji }] }
+// ── How data flows to your backend ────────────────────────────────────────
+// 1. YOUR BACKEND returns this JSON as the assistant response:
+//    { "type": "ProductRecommendation",
+//      "products": [{ id, name, price, rating, reviews, badge?, emoji }] }
+//    ConvEngine passes it as the \`payload\` prop to your component.
 //
-// Flow:
-//   1. User taps "+ Cart" on any products — row highlights, button turns green.
-//      Multiple products can be added. Tapping again removes from cart.
-//   2. "Buy Now" becomes active once cart has items.
-//   3. Clicking Buy Now calls submit() which:
-//      - Shows user bubble: "Buy Now Cart Items: AirPods Pro, MacBook Pro 14\""
-//      - Sends that text + { action:'buy_now', items:[...] } to your backend
+// 2. User taps "+ Cart" — row highlights, button turns green.
+//    Multiple products can be added; tap again to remove.
+//    Cart state is local React state — nothing sent to backend yet.
+//
+// 3. "Buy Now" activates once cart has items. Clicking it calls:
+//    actions.submit("Buy Now Cart Items: AirPods Pro, MagSafe Charger", {
+//      action: "buy_now",
+//      items: [{ id: "p1", name: "AirPods Pro", price: "$249" }, ...]
+//    });
+//
+// 4. ConvEngine does two things atomically:
+//    a) Appends user bubble: "Buy Now Cart Items: AirPods Pro, MagSafe Charger"
+//    b) POSTs to /chat:
+//       { text: "...", inputParams: { action: "buy_now", items: [...] } }
+//
+// 5. YOUR BACKEND reads inputParams.items[], creates the order, and returns
+//    an order confirmation or an OrderTracker card.
+// ─────────────────────────────────────────────────────────────────────────
 
 function ProductRecommendationComponent({ payload, actions }) {
   const [cart, setCart] = useState({});   // { [id]: true } — toggled
@@ -985,20 +1034,29 @@ export const productRecommendationRenderer = {
       ],
     },
     code: `// DataTableComponent.jsx
-// A custom renderer that renders structured data as a styled table card.
+// ── How data flows (display-only — no data is sent back to the backend) ───
+// This renderer is read-only. It presents a table returned by your backend
+// but does NOT call actions.submit / submitSilent — no user action POSTs data.
 //
-// Key feature: hideBubble: true — skips the surrounding bubble shell.
-// The ce-data-table-card element controls its own border/shadow/radius.
+// 1. YOUR BACKEND returns one of two shapes as the assistant response:
 //
-// Backend returns Option A (pre-parsed arrays):
-// { "type": "DataTable", "title": "Q1 Sales",
-//   "headers": ["Product", "Revenue"],
-//   "rows":    [["AirPods Pro", "$10.5M"], ...],
-//   "caption": "Source: internal CRM" }
+//    Option A — pre-parsed arrays (no client-side parsing, recommended):
+//    { "type": "DataTable", "title": "Q1 Sales",
+//      "headers": ["Product", "Revenue"],
+//      "rows":    [["AirPods Pro", "$10.5M"], ...],
+//      "caption": "Source: internal CRM" }
 //
-// Backend returns Option B (raw markdown table):
-// { "type": "DataTable", "title": "Q1 Sales",
-//   "markdown": "| Product | Revenue |\\n|---|---|\\n| AirPods Pro | $10.5M |" }
+//    Option B — raw markdown table (great when your LLM outputs markdown):
+//    { "type": "DataTable", "title": "Q1 Sales",
+//      "markdown": "| Product | Revenue |\\n|---|---|\\n| AirPods Pro | $10.5M |" }
+//    The parseMdTable() helper converts markdown rows → headers[] + rows[].
+//
+// 2. ConvEngine passes the full JSON as the \`payload\` prop; the component
+//    reads payload.headers / payload.rows (or parses payload.markdown).
+//
+// 3. hideBubble: true — ConvEngine skips the bubble wrapper entirely.
+//    The ce-data-table-card element owns its own card border/shadow/radius.
+// ─────────────────────────────────────────────────────────────────────────
 
 // ── Optional: import the helper from the library (also available) ──────────
 // import { parseAssistantSegments, prettifyHeader } from '@salilvnair/convengine-chat';
@@ -1118,18 +1176,42 @@ export const dataTableRenderer = {
       title: 'Tell us about yourself',
     },
     code: `// CompleteFormComponent.jsx
-// Backend returns:
-// { "type": "CompleteForm", "title": "Tell us about yourself" }
-// On submit, actions.submit() sends a user bubble with all field values
-// and your backend returns an "Information Collected" confirmation.
+// ── How data flows to your backend ────────────────────────────────────────
+// 1. YOUR BACKEND returns this JSON as the assistant response:
+//    { "type": "CompleteForm", "title": "Tell us about yourself" }
+//    ConvEngine passes it as the \`payload\` prop to your component.
+//
+// 2. USER fills all fields: first name, last name, country (dropdown),
+//    gender (radio pills), date of birth (calendar), photo (file upload),
+//    and checks "Accept terms". All values are local React state.
+//
+// 3. On clicking "Submit →", handleSubmit() validates, then calls:
+//    actions.submit("Form Submitted: Jane Doe, United States, Female, ...", {
+//      action: "form_submit",
+//      formData: {
+//        firstname: "Jane", lastname: "Doe", country: "United States",
+//        gender: "Female", dob: "1990-05-01",
+//        acceptTerms: true, photo: "profile.jpg"   // filename only, not raw file data
+//      }
+//    });
+//
+// 4. ConvEngine does two things atomically:
+//    a) Appends user bubble: "Form Submitted: Jane Doe, United States, ..."
+//    b) POSTs to your /chat endpoint:
+//       { text: "Form Submitted: ...",
+//         inputParams: { action: "form_submit", formData: { ... } } }
+//
+// 5. YOUR BACKEND reads inputParams.formData, stores the registration,
+//    and returns an "Information Collected" confirmation message.
+// ─────────────────────────────────────────────────────────────────────────
 
 const COUNTRIES = ['United States','United Kingdom','Canada','Australia','India','Other'];
-const SEX_OPTIONS = ['Male','Female','Non-binary','Prefer not to say'];
+const GENDER_OPTIONS = ['Male','Female','Non-binary','Prefer not to say'];
 
 function CompleteFormComponent({ payload, actions }) {
   const { title = 'Tell us about yourself' } = payload;
   const [form, setForm] = useState({
-    firstname: '', lastname: '', country: '', sex: '',
+    firstname: '', lastname: '', country: '', gender: '',
     acceptTerms: false, photo: null, dob: '',
   });
   const [submitted, setSubmitted] = useState(false);
@@ -1145,7 +1227,7 @@ function CompleteFormComponent({ payload, actions }) {
     if (!form.firstname.trim()) e.firstname = 'Required';
     if (!form.lastname.trim())  e.lastname  = 'Required';
     if (!form.country)          e.country   = 'Required';
-    if (!form.sex)              e.sex       = 'Required';
+    if (!form.gender)           e.gender    = 'Required';
     if (!form.acceptTerms)      e.acceptTerms = 'You must accept the terms';
     if (!form.dob)              e.dob       = 'Required';
     if (Object.keys(e).length) { setErrors(e); return; }
@@ -1153,7 +1235,7 @@ function CompleteFormComponent({ payload, actions }) {
     const parts = [
       \`\${form.firstname} \${form.lastname}\`,
       form.country,
-      form.sex,
+      form.gender,
       form.acceptTerms ? 'Terms Accepted' : 'Terms Not Accepted',
       form.photo ? form.photo.name : 'No photo',
       \`DOB: \${form.dob}\`,
@@ -1191,11 +1273,11 @@ function CompleteFormComponent({ payload, actions }) {
         {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
 
-      {/* Sex radio */}
-      {SEX_OPTIONS.map((opt) => (
+      {/* Gender radio */}
+      {GENDER_OPTIONS.map((opt) => (
         <label key={opt}>
-          <input type="radio" name="sex" value={opt}
-            checked={form.sex === opt} onChange={() => set('sex', opt)} />
+          <input type="radio" name="gender" value={opt}
+            checked={form.gender === opt} onChange={() => set('gender', opt)} />
           {opt}
         </label>
       ))}
@@ -1394,8 +1476,8 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
         {/* ── Toggles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <Toggle checked={settings.showFeedback}          onChange={(v) => onChange({ ...settings, showFeedback: v })}          label="Show Feedback (👍👎)"   hint="config.showFeedback"          modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
-          {showFor('fullscreen') && <Toggle checked={settings.showAudit}             onChange={(v) => onChange({ ...settings, showAudit: v })}             label="Show Audit Trail"       hint="config.showAudit"             modes={['fullscreen']} accentColor={settings.accentColor} />}
-          {showFor('fullscreen') && <Toggle checked={settings.showEngineStatus ?? true} onChange={(v) => onChange({ ...settings, showEngineStatus: v })} label="Engine Status Bar"      hint="config.showEngineStatus"      modes={['fullscreen']} accentColor={settings.accentColor} />}
+          <Toggle checked={settings.showAudit}             onChange={(v) => onChange({ ...settings, showAudit: v })}             label="Show Audit Trail"       hint="config.showAudit"             modes={['fullscreen']}             accentColor={settings.accentColor} />
+          <Toggle checked={settings.showEngineStatus ?? true} onChange={(v) => onChange({ ...settings, showEngineStatus: v })} label="Engine Status Bar"      hint="config.showEngineStatus"      modes={['fullscreen','sidepanel']} accentColor={settings.accentColor} />
           <Toggle checked={settings.showDarkModeLightMode} onChange={(v) => onChange({ ...settings, showDarkModeLightMode: v })} label="Dark/Light Mode Toggle" hint="config.showDarkModeLightMode" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
           <Toggle checked={settings.showHeaderDot}       onChange={(v) => onChange({ ...settings, showHeaderDot: v })}       label="Header Dot"         hint="config.showHeaderDot"       modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
           <Toggle checked={settings.showLandingAvatar}   onChange={(v) => onChange({ ...settings, showLandingAvatar: v })}   label="Landing Avatar"     hint="config.showLandingAvatar"   modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
@@ -1462,6 +1544,7 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
                   accent:          settings.accentColor,
                   feedback:        String(settings.showFeedback),
                   audit:           String(settings.showAudit),
+                  engineStatus:    String(settings.showEngineStatus ?? true),
                   darkMode:        String(settings.showDarkModeLightMode),
                   title:           settings.title       || '',
                   subtitle:        settings.subtitle    || '',
@@ -1577,6 +1660,653 @@ function NavDot({ href, children }) {
       <span className="w-1.5 h-1.5 rounded-full bg-current opacity-40 flex-shrink-0" />
       {children}
     </a>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tailwind live demos
+// ─────────────────────────────────────────────────────────────────────────────
+const TW_ACCENT_PRESETS = [
+  { name: 'Blue',    hex: '#3b82f6' },
+  { name: 'Indigo',  hex: '#6366f1' },
+  { name: 'Emerald', hex: '#10b981' },
+  { name: 'Rose',    hex: '#f43f5e' },
+  { name: 'Amber',   hex: '#f59e0b' },
+  { name: 'Violet',  hex: '#8b5cf6' },
+];
+
+function TwAccentPicker({ selected, onSelect, resetExtras }) {
+  return (
+    <div className="flex items-center gap-2">
+      <p className="text-[10px] text-slate-500 font-semibold">Accent:</p>
+      <div className="flex gap-1.5">
+        {TW_ACCENT_PRESETS.map((p, i) => (
+          <button key={p.name} title={p.name}
+            onClick={() => { onSelect(i); resetExtras?.(); }}
+            className={`w-4 h-4 rounded-full transition-transform ${selected === i ? 'ring-2 ring-offset-1 ring-slate-500 scale-110' : 'opacity-80 hover:opacity-100'}`}
+            style={{ backgroundColor: p.hex }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TailwindPlayground() {
+  const [tab, setTab] = useState('button');
+
+  // ── Button ──
+  // Inline style values are used for the live preview (Tailwind purges dynamic class strings).
+  // The className string in the dark box is shown purely for educational reference.
+  const BTN_COLORS = [
+    { name: 'Blue',    hex: '#3b82f6', darken: '#2563eb', cls: 'bg-blue-500 hover:bg-blue-600' },
+    { name: 'Indigo',  hex: '#6366f1', darken: '#4f46e5', cls: 'bg-indigo-500 hover:bg-indigo-600' },
+    { name: 'Emerald', hex: '#10b981', darken: '#059669', cls: 'bg-emerald-500 hover:bg-emerald-600' },
+    { name: 'Rose',    hex: '#f43f5e', darken: '#e11d48', cls: 'bg-rose-500 hover:bg-rose-600' },
+    { name: 'Amber',   hex: '#f59e0b', darken: '#d97706', cls: 'bg-amber-500 hover:bg-amber-600' },
+    { name: 'Violet',  hex: '#8b5cf6', darken: '#7c3aed', cls: 'bg-violet-500 hover:bg-violet-600' },
+  ];
+  const BTN_SIZES = [
+    { n: 'sm',  padding: '6px 12px',  fontSize: '12px', cls: 'px-3 py-1.5 text-xs' },
+    { n: 'md',  padding: '10px 20px', fontSize: '14px', cls: 'px-5 py-2.5 text-sm' },
+    { n: 'lg',  padding: '14px 28px', fontSize: '16px', cls: 'px-7 py-3.5 text-base' },
+  ];
+  const BTN_SHAPES = [
+    { n: 'square',  radius: '0px',    cls: 'rounded-none' },
+    { n: 'rounded', radius: '6px',    cls: 'rounded-md' },
+    { n: 'xl',      radius: '12px',   cls: 'rounded-xl' },
+    { n: 'pill',    radius: '9999px', cls: 'rounded-full' },
+  ];
+  const [bColor, setBColor] = useState(0);
+  const [bSize,  setBSize]  = useState(1);
+  const [bShape, setBShape] = useState(2);
+  const [bHover, setBHover] = useState(false);
+  const bc = BTN_COLORS[bColor];
+  const btnPreviewStyle = {
+    backgroundColor: bHover ? bc.darken : bc.hex,
+    color: 'white', fontWeight: '600',
+    padding: BTN_SIZES[bSize].padding, fontSize: BTN_SIZES[bSize].fontSize,
+    borderRadius: BTN_SHAPES[bShape].radius,
+    border: 'none', cursor: 'pointer', transition: 'background-color 0.15s',
+  };
+  const btnCls = `${bc.cls} text-white font-semibold ${BTN_SIZES[bSize].cls} ${BTN_SHAPES[bShape].cls} transition-colors`;
+
+  // ── Card ──
+  const CARD_PADDINGS = [
+    { n: 'p-3',  val: '12px', cls: 'p-3' },
+    { n: 'p-6',  val: '24px', cls: 'p-6' },
+    { n: 'p-10', val: '40px', cls: 'p-10' },
+  ];
+  const CARD_RADII = [
+    { n: 'none', val: '0px',  cls: 'rounded-none' },
+    { n: 'md',   val: '6px',  cls: 'rounded-md' },
+    { n: '2xl',  val: '16px', cls: 'rounded-2xl' },
+    { n: '3xl',  val: '24px', cls: 'rounded-3xl' },
+  ];
+  const CARD_BGS = [
+    { n: 'white',    hex: '#ffffff', cls: 'bg-white' },
+    { n: 'slate-50', hex: '#f8fafc', cls: 'bg-slate-50' },
+    { n: 'sky-50',   hex: '#f0f9ff', cls: 'bg-sky-50' },
+  ];
+  const [cShadow,  setCshadow]  = useState(true);
+  const [cBorder,  setCborder]  = useState(true);
+  const [cPadding, setCpadding] = useState(1);
+  const [cRounded, setCrounded] = useState(2);
+  const [cBg,      setCbg]      = useState(0);
+  const cardPreviewStyle = {
+    backgroundColor: CARD_BGS[cBg].hex,
+    padding: CARD_PADDINGS[cPadding].val,
+    borderRadius: CARD_RADII[cRounded].val,
+    boxShadow: cShadow ? '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' : 'none',
+    border: cBorder ? '1px solid #e2e8f0' : 'none',
+    maxWidth: 260, width: '100%',
+  };
+  const cardCls = [CARD_BGS[cBg].cls, CARD_RADII[cRounded].cls, CARD_PADDINGS[cPadding].cls, cShadow ? 'shadow-lg' : '', cBorder ? 'border border-slate-200' : ''].filter(Boolean).join(' ');
+
+  // ── Text ──
+  const TXT_COLORS = [
+    { n: 'Default', hex: '#1e293b', cls: 'text-slate-800' },
+    { n: 'Sky',     hex: '#0284c7', cls: 'text-sky-600' },
+    { n: 'Emerald', hex: '#059669', cls: 'text-emerald-600' },
+    { n: 'Rose',    hex: '#e11d48', cls: 'text-rose-600' },
+    { n: 'Violet',  hex: '#7c3aed', cls: 'text-violet-600' },
+    { n: 'Amber',   hex: '#d97706', cls: 'text-amber-600' },
+  ];
+  const TXT_SIZES = [
+    { n: 'sm',  val: '14px', cls: 'text-sm' },
+    { n: 'base',val: '16px', cls: 'text-base' },
+    { n: 'lg',  val: '18px', cls: 'text-lg' },
+    { n: 'xl',  val: '20px', cls: 'text-xl' },
+    { n: '2xl', val: '24px', cls: 'text-2xl' },
+  ];
+  const TXT_WEIGHTS = [
+    { n: 'normal',    val: '400', cls: 'font-normal' },
+    { n: 'medium',    val: '500', cls: 'font-medium' },
+    { n: 'semibold',  val: '600', cls: 'font-semibold' },
+    { n: 'bold',      val: '700', cls: 'font-bold' },
+    { n: 'extrabold', val: '800', cls: 'font-extrabold' },
+  ];
+  const [tColor,  setTcolor]  = useState(0);
+  const [tSize,   setTsize]   = useState(1);
+  const [tWeight, setTweight] = useState(2);
+  const [tItalic, setTitalic] = useState(false);
+  const [tUnder,  setTunder]  = useState(false);
+  const textPreviewStyle = {
+    color: TXT_COLORS[tColor].hex,
+    fontSize: TXT_SIZES[tSize].val,
+    fontWeight: TXT_WEIGHTS[tWeight].val,
+    fontStyle: tItalic ? 'italic' : 'normal',
+    textDecoration: tUnder ? 'underline' : 'none',
+  };
+  const textCls = [TXT_COLORS[tColor].cls, TXT_SIZES[tSize].cls, TXT_WEIGHTS[tWeight].cls, tItalic ? 'italic' : '', tUnder ? 'underline' : ''].filter(Boolean).join(' ');
+
+  const TABS = [{ id: 'button', label: '🔵 Button' }, { id: 'card', label: '🃏 Card' }, { id: 'text', label: '🔤 Text' }];
+
+  return (
+    <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden">
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-sky-100 flex flex-wrap items-center gap-2">
+        <span className="text-base">🎨</span>
+        <div>
+          <p className="text-sm font-bold text-sky-800">Tailwind Playground — Try it live</p>
+          <p className="text-xs text-sky-500">Click an option → watch the preview change → read the Tailwind className that produced it</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-sky-100">
+        {TABS.map(({ id, label }) => (
+          <button key={id} onClick={() => setTab(id)}
+            className={`px-4 py-2.5 text-xs font-semibold transition-colors ${tab === id ? 'bg-white text-sky-700 border-b-2 border-sky-500' : 'text-sky-500 hover:bg-sky-100/60'}`}
+          >{label}</button>
+        ))}
+      </div>
+
+      <div className="p-4 space-y-3">
+
+        {/* ── Button tab ── */}
+        {tab === 'button' && (
+          <>
+            {/* Preview first — rendered with inline styles so it always works */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-center min-h-[80px]">
+              <button style={btnPreviewStyle}
+                onMouseEnter={() => setBHover(true)} onMouseLeave={() => setBHover(false)}>
+                Click me
+              </button>
+            </div>
+            {/* Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Color</p>
+                <div className="flex flex-wrap gap-2">
+                  {BTN_COLORS.map((p, i) => (
+                    <button key={p.name} title={p.name} onClick={() => setBColor(i)}
+                      className={`w-6 h-6 rounded-full transition-transform ${bColor === i ? 'ring-2 ring-offset-1 ring-slate-600 scale-110' : ''}`}
+                      style={{ backgroundColor: p.hex }} />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Size</p>
+                <div className="flex gap-1">
+                  {BTN_SIZES.map((s, i) => (
+                    <button key={s.n} onClick={() => setBSize(i)}
+                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${bSize === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    >{s.n}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Shape</p>
+                <div className="flex flex-wrap gap-1">
+                  {BTN_SHAPES.map((s, i) => (
+                    <button key={s.n} onClick={() => setBShape(i)}
+                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${bShape === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    >{s.n}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* className output */}
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the button above:</p>
+              <p className="text-xs font-mono text-emerald-300 break-all">&quot;{btnCls}&quot;</p>
+            </div>
+          </>
+        )}
+
+        {/* ── Card tab ── */}
+        {tab === 'card' && (
+          <>
+            {/* Preview first */}
+            <div className="bg-slate-100 rounded-xl p-6 flex items-center justify-center min-h-[120px]">
+              <div style={cardPreviewStyle}>
+                <p style={{ fontWeight: '600', color: '#334155', fontSize: '14px', marginBottom: 4 }}>Card Title</p>
+                <p style={{ fontSize: '12px', color: '#64748b' }}>Composed entirely from Tailwind utility classes — no custom CSS file needed.</p>
+              </div>
+            </div>
+            {/* Controls */}
+            <div className="flex flex-wrap gap-2">
+              {[{ label: 'Shadow', val: cShadow, set: setCshadow }, { label: 'Border', val: cBorder, set: setCborder }].map(({ label, val, set }) => (
+                <button key={label} onClick={() => set(v => !v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${val ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                ><span>{val ? '✓' : '○'}</span>{label}</button>
+              ))}
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500 font-semibold">Padding:</span>
+                {CARD_PADDINGS.map((p, i) => (
+                  <button key={p.n} onClick={() => setCpadding(i)}
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cPadding === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                  >{p.n}</button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500 font-semibold">Corners:</span>
+                {CARD_RADII.map((r, i) => (
+                  <button key={r.n} onClick={() => setCrounded(i)}
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cRounded === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                  >{r.n}</button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-500 font-semibold">BG:</span>
+                {CARD_BGS.map((b, i) => (
+                  <button key={b.n} onClick={() => setCbg(i)}
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cBg === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                  >{b.n}</button>
+                ))}
+              </div>
+            </div>
+            {/* className output */}
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the card above:</p>
+              <p className="text-xs font-mono text-emerald-300 break-all">&quot;{cardCls}&quot;</p>
+            </div>
+          </>
+        )}
+
+        {/* ── Text tab ── */}
+        {tab === 'text' && (
+          <>
+            {/* Preview first */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-center min-h-[80px]">
+              <p style={textPreviewStyle}>The quick brown fox jumps over the lazy dog</p>
+            </div>
+            {/* Controls */}
+            <div className="flex flex-wrap gap-3">
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-500 font-semibold">Color</p>
+                <div className="flex flex-wrap gap-1">
+                  {TXT_COLORS.map((c, i) => (
+                    <button key={c.n} onClick={() => setTcolor(i)}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${tColor === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    >{c.n}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-500 font-semibold">Size</p>
+                <div className="flex flex-wrap gap-1">
+                  {TXT_SIZES.map((s, i) => (
+                    <button key={s.n} onClick={() => setTsize(i)}
+                      className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${tSize === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    >{s.n}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-500 font-semibold">Weight</p>
+                <div className="flex flex-wrap gap-1">
+                  {TXT_WEIGHTS.map((w, i) => (
+                    <button key={w.n} onClick={() => setTweight(i)}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${tWeight === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    >{w.n}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-500 font-semibold">Style</p>
+                <div className="flex gap-1">
+                  {[{ label: 'italic', val: tItalic, set: setTitalic }, { label: 'underline', val: tUnder, set: setTunder }].map(({ label, val, set }) => (
+                    <button key={label} onClick={() => set(v => !v)}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${val ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* className output */}
+            <div className="bg-slate-900 rounded-xl p-3">
+              <p className="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the text above:</p>
+              <p className="text-xs font-mono text-emerald-300 break-all">&quot;{textCls}&quot;</p>
+            </div>
+          </>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+function TailwindNotificationPreview() {
+  const [accent, setAccent] = useState(0);
+  const [dismissed, setDismissed] = useState(false);
+  const [opened, setOpened] = useState(false);
+  const hex = TW_ACCENT_PRESETS[accent].hex;
+  return (
+    <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden">
+      <div className="px-4 py-3 border-b border-sky-100 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">▶</span>
+          <p className="text-sm font-bold text-sky-800">Live Preview</p>
+        </div>
+        <TwAccentPicker selected={accent} onSelect={setAccent} resetExtras={() => { setDismissed(false); setOpened(false); }} />
+      </div>
+      <div className="p-4">
+        {opened ? (
+          <div className="rounded-xl border px-4 py-3 flex items-center gap-3" style={{ backgroundColor: hex + '18', borderColor: hex + '50' }}>
+            <span className="text-lg">💬</span>
+            <p className="flex-1 text-sm font-medium" style={{ color: hex }}>Chat is open — type a message!</p>
+            <button onClick={() => setOpened(false)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={{ backgroundColor: hex }}
+            >Minimize</button>
+          </div>
+        ) : dismissed ? (
+          <div className="text-center py-4">
+            <p className="text-xs text-slate-400">Banner dismissed.</p>
+            <button onClick={() => setDismissed(false)} className="text-xs text-sky-500 hover:underline mt-1">Show again</button>
+          </div>
+        ) : (
+          <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
+            style={{ backgroundColor: hex + '18', border: `1px solid ${hex}45` }}>
+            <div className="w-2 h-2 rounded-full flex-shrink-0 animate-pulse" style={{ backgroundColor: hex }} />
+            <p className="flex-1 text-sm font-medium" style={{ color: hex }}>You have a new response in the chat!</p>
+            <button onClick={() => setOpened(true)}
+              className="text-xs font-bold px-3 py-1.5 rounded-lg text-white flex-shrink-0" style={{ backgroundColor: hex }}
+            >Open chat</button>
+            <button onClick={() => setDismissed(true)} className="text-slate-300 hover:text-slate-500 text-sm leading-none">✕</button>
+          </div>
+        )}
+        <p className="text-[10px] text-sky-400 mt-3">Try switching the accent color above — all elements update instantly.</p>
+      </div>
+    </div>
+  );
+}
+
+function TailwindSidebarPreview() {
+  const [accent, setAccent] = useState(0);
+  const [activeNav, setActiveNav] = useState('Messages');
+  const [unread, setUnread] = useState(3);
+  const hex = TW_ACCENT_PRESETS[accent].hex;
+  const NAV_ITEMS = ['Dashboard', 'Messages', 'Settings', 'Profile'];
+  return (
+    <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden">
+      <div className="px-4 py-3 border-b border-sky-100 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm">▶</span>
+          <p className="text-sm font-bold text-sky-800">Live Preview</p>
+        </div>
+        <TwAccentPicker selected={accent} onSelect={setAccent} resetExtras={() => setUnread(3)} />
+      </div>
+      <div className="p-4">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex">
+          {/* Sidebar */}
+          <div className="w-40 border-r border-slate-100 p-2 space-y-0.5 flex-shrink-0">
+            {NAV_ITEMS.map((item) => {
+              const isActive = item === activeNav;
+              return (
+                <button key={item} onClick={() => setActiveNav(item)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left"
+                  style={isActive
+                    ? { backgroundColor: hex + '18', color: hex, borderLeft: `2px solid ${hex}` }
+                    : { color: '#64748b' }
+                  }
+                >
+                  <span>{item}</span>
+                  {item === 'Messages' && unread > 0 && (
+                    <span className="text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: hex }}>{unread}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {/* Content */}
+          <div className="flex-1 p-4 min-w-0">
+            <p className="font-semibold text-sm text-slate-700">{activeNav}</p>
+            {activeNav === 'Messages' ? (
+              <div className="mt-2 space-y-1.5">
+                <p className="text-xs text-slate-500">{unread > 0 ? `${unread} unread messages` : 'All caught up!'}</p>
+                {unread > 0 && (
+                  <button onClick={() => setUnread(0)}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg text-white" style={{ backgroundColor: hex }}
+                  >Mark all read</button>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 mt-2">Click nav items to see active state.</p>
+            )}
+          </div>
+        </div>
+        <p className="text-[10px] text-sky-400 mt-3">Click nav items to toggle active state. Switch accent to see the badge and highlight update.</p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tailwind class-input demo (type-your-own)
+// ─────────────────────────────────────────────────────────────────────────────
+const TW_COLOR_MAP = {
+  white:'#ffffff', black:'#000000', transparent:'transparent',
+  'slate-50':'#f8fafc','slate-100':'#f1f5f9','slate-200':'#e2e8f0','slate-300':'#cbd5e1',
+  'slate-400':'#94a3b8','slate-500':'#64748b','slate-600':'#475569','slate-700':'#334155',
+  'slate-800':'#1e293b','slate-900':'#0f172a',
+  'gray-50':'#f9fafb','gray-100':'#f3f4f6','gray-200':'#e5e7eb','gray-300':'#d1d5db',
+  'gray-400':'#9ca3af','gray-500':'#6b7280','gray-600':'#4b5563','gray-700':'#374151',
+  'gray-800':'#1f2937','gray-900':'#111827',
+  'red-50':'#fef2f2','red-100':'#fee2e2','red-200':'#fecaca','red-300':'#fca5a5',
+  'red-400':'#f87171','red-500':'#ef4444','red-600':'#dc2626','red-700':'#b91c1c',
+  'orange-50':'#fff7ed','orange-100':'#ffedd5','orange-200':'#fed7aa',
+  'orange-400':'#fb923c','orange-500':'#f97316','orange-600':'#ea580c','orange-700':'#c2410c',
+  'amber-50':'#fffbeb','amber-100':'#fef3c7','amber-200':'#fde68a',
+  'amber-400':'#fbbf24','amber-500':'#f59e0b','amber-600':'#d97706','amber-700':'#b45309',
+  'yellow-100':'#fef9c3','yellow-200':'#fef08a','yellow-400':'#facc15','yellow-500':'#eab308',
+  'green-50':'#f0fdf4','green-100':'#dcfce7','green-200':'#bbf7d0',
+  'green-400':'#4ade80','green-500':'#22c55e','green-600':'#16a34a','green-700':'#15803d',
+  'emerald-50':'#ecfdf5','emerald-100':'#d1fae5','emerald-200':'#a7f3d0',
+  'emerald-400':'#34d399','emerald-500':'#10b981','emerald-600':'#059669','emerald-700':'#047857',
+  'teal-50':'#f0fdfa','teal-100':'#ccfbf1','teal-400':'#2dd4bf',
+  'teal-500':'#14b8a6','teal-600':'#0d9488','teal-700':'#0f766e',
+  'cyan-100':'#cffafe','cyan-400':'#22d3ee','cyan-500':'#06b6d4','cyan-600':'#0891b2',
+  'sky-50':'#f0f9ff','sky-100':'#e0f2fe','sky-200':'#bae6fd','sky-300':'#7dd3fc',
+  'sky-400':'#38bdf8','sky-500':'#0ea5e9','sky-600':'#0284c7','sky-700':'#0369a1',
+  'blue-50':'#eff6ff','blue-100':'#dbeafe','blue-200':'#bfdbfe','blue-300':'#93c5fd',
+  'blue-400':'#60a5fa','blue-500':'#3b82f6','blue-600':'#2563eb','blue-700':'#1d4ed8',
+  'blue-800':'#1e40af','blue-900':'#1e3a8a',
+  'indigo-50':'#eef2ff','indigo-100':'#e0e7ff','indigo-200':'#c7d2fe','indigo-300':'#a5b4fc',
+  'indigo-400':'#818cf8','indigo-500':'#6366f1','indigo-600':'#4f46e5','indigo-700':'#4338ca',
+  'violet-50':'#f5f3ff','violet-100':'#ede9fe','violet-200':'#ddd6fe','violet-300':'#c4b5fd',
+  'violet-400':'#a78bfa','violet-500':'#8b5cf6','violet-600':'#7c3aed','violet-700':'#6d28d9',
+  'purple-400':'#c084fc','purple-500':'#a855f7','purple-600':'#9333ea',
+  'pink-50':'#fdf2f8','pink-100':'#fce7f3','pink-200':'#fbcfe8',
+  'pink-400':'#f472b6','pink-500':'#ec4899','pink-600':'#db2777','pink-700':'#be185d',
+  'rose-50':'#fff1f2','rose-100':'#ffe4e6','rose-200':'#fecdd3','rose-300':'#fda4af',
+  'rose-400':'#fb7185','rose-500':'#f43f5e','rose-600':'#e11d48','rose-700':'#be123c',
+  // ConvEngine brand tokens — these are CSS variables, not hex values
+  'brand':        'var(--ce-color-accent)',
+  'brand-hover':  'var(--ce-color-accent-hover)',
+  'chat-user':    'var(--ce-bg-bubble-user)',
+  'chat-agent':   'var(--ce-bg-bubble-agent)',
+  'chat-panel':   'var(--ce-bg-panel)',
+};
+
+const TW_PX = { 0:'0px',0.5:'2px',1:'4px',1.5:'6px',2:'8px',2.5:'10px',3:'12px',3.5:'14px',4:'16px',5:'20px',6:'24px',7:'28px',8:'32px',9:'36px',10:'40px',11:'44px',12:'48px',14:'56px',16:'64px',20:'80px',24:'96px' };
+
+function twToStyle(classString) {
+  const styles = {};
+  const resolved = [];
+  const unknown = [];
+  for (const cls of classString.trim().split(/\s+/).filter(Boolean)) {
+    let hit = false;
+    const trySet = (prop, val, displayProp, displayVal) => {
+      styles[prop] = val; resolved.push({ cls, prop: displayProp || prop, val: displayVal || val }); hit = true;
+    };
+    // bg-{color}
+    const bgM = cls.match(/^bg-(.+)$/);
+    if (!hit && bgM && TW_COLOR_MAP[bgM[1]] !== undefined) trySet('backgroundColor', TW_COLOR_MAP[bgM[1]], 'background-color');
+    // text-{color}
+    const tcM = cls.match(/^text-(.+)$/);
+    if (!hit && tcM && TW_COLOR_MAP[tcM[1]] !== undefined) trySet('color', TW_COLOR_MAP[tcM[1]], 'color');
+    // text-{size}
+    const tSizeMap = {'text-xs':'12px','text-sm':'14px','text-base':'16px','text-lg':'18px','text-xl':'20px','text-2xl':'24px','text-3xl':'30px','text-4xl':'36px','text-5xl':'48px'};
+    if (!hit && tSizeMap[cls]) trySet('fontSize', tSizeMap[cls], 'font-size');
+    // font-{weight}
+    const fwMap = {'font-thin':'100','font-extralight':'200','font-light':'300','font-normal':'400','font-medium':'500','font-semibold':'600','font-bold':'700','font-extrabold':'800','font-black':'900'};
+    if (!hit && fwMap[cls]) trySet('fontWeight', fwMap[cls], 'font-weight');
+    // rounded
+    const rMap = {'rounded-none':'0','rounded-sm':'2px','rounded':'4px','rounded-md':'6px','rounded-lg':'8px','rounded-xl':'12px','rounded-2xl':'16px','rounded-3xl':'24px','rounded-full':'9999px'};
+    if (!hit && rMap[cls]) trySet('borderRadius', rMap[cls], 'border-radius');
+    // p px py
+    const pM  = cls.match(/^p-(\d+(?:\.\d+)?)$/);
+    if (!hit && pM  && TW_PX[pM[1]])  { styles.padding = TW_PX[pM[1]]; resolved.push({ cls, prop:'padding', val:TW_PX[pM[1]] }); hit = true; }
+    const pxM = cls.match(/^px-(\d+(?:\.\d+)?)$/);
+    if (!hit && pxM && TW_PX[pxM[1]]) { styles.paddingLeft = styles.paddingRight = TW_PX[pxM[1]]; resolved.push({ cls, prop:'padding-inline', val:TW_PX[pxM[1]] }); hit = true; }
+    const pyM = cls.match(/^py-(\d+(?:\.\d+)?)$/);
+    if (!hit && pyM && TW_PX[pyM[1]]) { styles.paddingTop = styles.paddingBottom = TW_PX[pyM[1]]; resolved.push({ cls, prop:'padding-block', val:TW_PX[pyM[1]] }); hit = true; }
+    // border width
+    const bwMap = {'border':'1px solid','border-0':'none','border-2':'2px solid','border-4':'4px solid','border-8':'8px solid'};
+    if (!hit && bwMap[cls]) trySet('border', bwMap[cls], 'border');
+    // border-{color}
+    const bcM = cls.match(/^border-(.+)$/);
+    if (!hit && bcM && TW_COLOR_MAP[bcM[1]] !== undefined) { styles.borderColor = TW_COLOR_MAP[bcM[1]]; if (!styles.border) styles.border = '1px solid'; resolved.push({ cls, prop:'border-color', val:TW_COLOR_MAP[bcM[1]] }); hit = true; }
+    // shadow
+    const shMap = {'shadow-sm':'0 1px 2px 0 rgb(0 0 0/0.05)','shadow':'0 1px 3px 0 rgb(0 0 0/0.1)','shadow-md':'0 4px 6px -1px rgb(0 0 0/0.1)','shadow-lg':'0 10px 15px -3px rgb(0 0 0/0.1)','shadow-xl':'0 20px 25px -5px rgb(0 0 0/0.1)','shadow-2xl':'0 25px 50px -12px rgb(0 0 0/0.25)','shadow-none':'none'};
+    if (!hit && shMap[cls]) trySet('boxShadow', shMap[cls], 'box-shadow');
+    // opacity
+    const opM = cls.match(/^opacity-(\d+)$/);
+    if (!hit && opM) trySet('opacity', parseInt(opM[1]) / 100, 'opacity', opM[1] + '%');
+    // font-style / text-decoration
+    if (!hit && cls === 'italic')     trySet('fontStyle',      'italic',     'font-style');
+    if (!hit && cls === 'not-italic') trySet('fontStyle',      'normal',     'font-style');
+    if (!hit && cls === 'underline')  trySet('textDecoration', 'underline',  'text-decoration');
+    if (!hit && cls === 'line-through') trySet('textDecoration', 'line-through', 'text-decoration');
+    if (!hit) unknown.push(cls);
+  }
+  return { styles, resolved, unknown };
+}
+
+function TailwindClassInputDemo() {
+  const DEFAULT_INPUT = 'bg-blue-500 text-white font-semibold px-5 py-2.5 rounded-xl';
+  const [input, setInput] = useState(DEFAULT_INPUT);
+  const { styles, resolved, unknown } = twToStyle(input);
+  const activeSet = new Set(input.trim().split(/\s+/).filter(Boolean));
+
+  const CHIPS = [
+    { label: 'bg-brand',      brand: true },
+    { label: 'text-brand',    brand: true },
+    { label: 'border-brand',  brand: true },
+    { label: 'bg-blue-500' },
+    { label: 'bg-emerald-500' },
+    { label: 'bg-rose-500' },
+    { label: 'bg-violet-500' },
+    { label: 'bg-amber-100' },
+    { label: 'text-white' },
+    { label: 'text-slate-800' },
+    { label: 'font-bold' },
+    { label: 'text-lg' },
+    { label: 'italic' },
+    { label: 'underline' },
+    { label: 'rounded-full' },
+    { label: 'rounded-xl' },
+    { label: 'rounded-none' },
+    { label: 'shadow-lg' },
+    { label: 'shadow-none' },
+    { label: 'border-2' },
+    { label: 'border-blue-300' },
+    { label: 'px-6' },
+    { label: 'py-3' },
+    { label: 'opacity-50' },
+  ];
+
+  function toggleChip(label) {
+    const parts = input.trim().split(/\s+/).filter(Boolean);
+    setInput(parts.includes(label) ? parts.filter(c => c !== label).join(' ') : [...parts, label].join(' '));
+  }
+
+  return (
+    <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 overflow-hidden">
+      <div className="px-4 py-3 border-b border-indigo-100">
+        <p className="text-sm font-bold text-indigo-800">🎛️  Click classes to toggle — including bg-brand</p>
+        <p className="text-xs text-indigo-500 mt-0.5">
+          Click any chip below to add or remove it. The preview and breakdown update instantly.
+          The <code className="bg-indigo-100 px-1 rounded font-mono">bg-brand</code>,{' '}
+          <code className="bg-indigo-100 px-1 rounded font-mono">text-brand</code>, and{' '}
+          <code className="bg-indigo-100 px-1 rounded font-mono">border-brand</code> chips are ConvEngine&apos;s accent — marked ✦
+        </p>
+      </div>
+      <div className="p-4 space-y-3">
+        {/* Quick-add chips */}
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Click to add / remove — ✦ = ConvEngine accent</p>
+          <div className="flex flex-wrap gap-1.5">
+            {CHIPS.map(({ label, brand }) => {
+              const active = activeSet.has(label);
+              return (
+                <button key={label} onClick={() => toggleChip(label)}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-mono font-semibold transition-colors border ${
+                    active
+                      ? brand ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-sky-600 text-white border-sky-700'
+                      : brand ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {label}{brand ? ' ✦' : ''}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        {/* Live preview */}
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Preview</p>
+          <div className="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-center min-h-[80px]">
+            <span style={{ ...styles, display: 'inline-block' }}>I am styled by your classes</span>
+          </div>
+        </div>
+        {/* Class breakdown */}
+        {(resolved.length > 0 || unknown.length > 0) && (
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">What each class does</p>
+            <div className="overflow-x-auto rounded-xl border border-slate-700">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-900 text-slate-400">
+                    <th className="px-3 py-2 text-left font-mono font-semibold">class</th>
+                    <th className="px-3 py-2 text-left font-mono font-semibold">CSS property</th>
+                    <th className="px-3 py-2 text-left font-mono font-semibold">resolves to</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-slate-800 divide-y divide-slate-700/50">
+                  {resolved.map(({ cls, prop, val }, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2 font-mono text-amber-300">{cls}</td>
+                      <td className="px-3 py-2 font-mono text-sky-300">{prop}</td>
+                      <td className="px-3 py-2 font-mono text-emerald-300 break-all">{val}</td>
+                    </tr>
+                  ))}
+                  {unknown.map((cls, i) => (
+                    <tr key={`u${i}`} className="opacity-40">
+                      <td className="px-3 py-2 font-mono text-rose-400">{cls}</td>
+                      <td className="px-3 py-2 text-slate-500 italic" colSpan={2}>not in this demo&apos;s parser</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1883,7 +2613,7 @@ const myRenderer = {
                 <PropRow prop="placeholder"           type='string'   defaultVal='"Ask ConvEngine…"'                           description='Composer input placeholder text.' />
                 <PropRow prop="showFeedback"          type='boolean'  defaultVal='true'                                        description='Show 👍👎 feedback buttons under assistant messages.' />
                 <PropRow prop="showAudit"             type='boolean'  defaultVal='false'                                       description='Show the audit trail side panel.' />
-                <PropRow prop="showEngineStatus"      type='boolean'  defaultVal='true'                                        description='Show the engine status bar (intent, state, response time) in fullscreen mode.' />
+                <PropRow prop="showEngineStatus"      type='boolean'  defaultVal='true'                                        description='Show the engine status bar (intent, state, response time) in fullscreen and sidepanel modes.' />
                 <PropRow prop="showDarkModeLightMode" type='boolean'  defaultVal='false'                                       description='Show the dark/light mode toggle button in the header.' />
                 <PropRow prop="showHeaderDot"         type='boolean'  defaultVal='true'                                        description='Show the pulsing accent dot next to the header title.' />
                 <PropRow prop="showLandingAvatar"     type='boolean'  defaultVal='true'                                        description='Show the bot avatar icon on the landing screen.' />
@@ -2064,49 +2794,117 @@ const myRenderer = {
 
           {/* Tailwind Integration */}
           <DocCard id="tailwind">
-            <SectionHeader gradient="bg-gradient-to-r from-sky-500 to-cyan-500" icon="🌊" title="Tailwind Integration" subtitle="Use ConvEngine design tokens as Tailwind utility classes" />
+            <SectionHeader gradient="bg-gradient-to-r from-sky-500 to-cyan-500" icon="🌊" title="Tailwind Integration" subtitle="Make your app's colors follow the chat widget automatically" />
             <DocCardBody>
-              <Tip color="sky" icon="💡" title="What this enables">
-                By aliasing ConvEngine&apos;s CSS custom properties in <code className="font-mono text-xs bg-sky-100 px-1 rounded">tailwind.config.js</code>, you can
-                write <code className="font-mono text-xs bg-sky-100 px-1 rounded">text-brand</code> or <code className="font-mono text-xs bg-sky-100 px-1 rounded">bg-brand</code> in your own components and they
-                will automatically react to whatever accent color you pass to ConvEngine — no manual sync needed.
+
+              {/* ── What is Tailwind ───────────────────────────────────── */}
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">What is Tailwind CSS?</p>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Tailwind CSS is a utility-first styling library. Instead of writing custom CSS files, you style elements
+                directly in your HTML/JSX using short class names like <code className="font-mono text-xs bg-sky-100 px-1 rounded">bg-blue-500</code> (blue background),{' '}
+                <code className="font-mono text-xs bg-sky-100 px-1 rounded">text-white</code> (white text), or{' '}
+                <code className="font-mono text-xs bg-sky-100 px-1 rounded">rounded-xl</code> (rounded corners).
+                It&apos;s widely used because it&apos;s fast to write, easy to read, and produces small CSS bundles.
+              </p>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                The key feature relevant here is <strong>custom color aliases</strong> — you can teach Tailwind new color names
+                (like <code className="font-mono text-xs bg-sky-100 px-1 rounded">brand</code>) and then use them exactly like built-in colors:
+                {' '}<code className="font-mono text-xs bg-sky-100 px-1 rounded">bg-brand</code>,{' '}
+                <code className="font-mono text-xs bg-sky-100 px-1 rounded">text-brand</code>,{' '}
+                <code className="font-mono text-xs bg-sky-100 px-1 rounded">border-brand</code>, and so on.
+              </p>
+
+              {/* ── Interactive Tailwind playground */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tailwind in 60 seconds — try it live</p>
+                <p className="text-xs text-slate-500">Click the options below and watch the className and preview update in real time — no setup needed.</p>
+              </div>
+              <TailwindPlayground />
+
+              {/* ── Type-your-own demo */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Click classes and see them live — including bg-brand</p>
+                <p className="text-xs text-slate-500">
+                  Click any chip to toggle it on/off. The preview updates instantly and the table shows exactly what CSS each class produces.
+                  Try <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">bg-brand</code> — it picks up ConvEngine&apos;s accent color live.
+                </p>
+              </div>
+              <TailwindClassInputDemo />
+
+              {/* ── How ConvEngine fits in ─────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">How ConvEngine works with Tailwind</p>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                ConvEngine stores its active theme colors as <strong>CSS variables</strong> on the page — for example,
+                the accent color lives in <code className="font-mono text-xs bg-sky-100 px-1 rounded">--ce-color-accent</code>.
+                When you change the accent via the <code className="font-mono text-xs bg-sky-100 px-1 rounded">theme</code> prop,
+                that variable updates instantly across the whole page.
+              </p>
+              <Tip color="sky" icon="💡" title="The connection">
+                Point a Tailwind color alias at that CSS variable. Now <code className="font-mono text-xs bg-sky-100 px-1 rounded">bg-brand</code> in
+                any of your own components will always match the chat widget&apos;s accent — no manual syncing, no hard-coded hex values ever.
               </Tip>
 
-              {/* ── Step 1 ─────────────────────────────────────────────── */}
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 1 — Extend tailwind.config.js</p>
-                <p className="text-xs text-slate-500">Map any ConvEngine CSS token to a Tailwind color / spacing alias.</p>
-              </div>
-              <CodeBlock lang="js" code={`// tailwind.config.js\nmodule.exports = {\n  content: ['./src/**/*.{js,jsx,ts,tsx}'],\n  theme: {\n    extend: {\n      colors: {\n        // Accent — mirrors whatever you pass to ConvEngineChat\n        brand:         'var(--ce-color-accent)',\n        'brand-hover': 'var(--ce-color-accent-hover)',\n\n        // Chat bubble fills\n        'chat-user':  'var(--ce-bg-bubble-user)',\n        'chat-agent': 'var(--ce-bg-bubble-agent)',\n\n        // Panel surface\n        'chat-panel': 'var(--ce-bg-panel)',\n      },\n      fontFamily: {\n        chat: 'var(--ce-font-family)',\n      },\n    },\n  },\n};`} />
-
-              {/* ── Step 2 ─────────────────────────────────────────────── */}
+              {/* ── Step 1 ────────────────────────────────────────────── */}
               <div className="space-y-1 mt-2">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 2 — Use the aliases in your components</p>
-                <p className="text-xs text-slate-500">No hard-coded hex values — colors inherit from the live CSS variable.</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 1 — Add aliases to tailwind.config.js</p>
+                <p className="text-xs text-slate-500">Do this once. It&apos;s just a name pointing at a CSS variable.</p>
               </div>
-              <CodeBlock lang="jsx" code={`// Any component co-located with the chat widget\nexport function AskButton({ onClick }) {\n  return (\n    <button\n      onClick={onClick}\n      className="bg-brand hover:bg-brand-hover text-white font-semibold\n                 px-5 py-2.5 rounded-xl transition-colors"\n    >\n      Ask ConvEngine →\n    </button>\n  );\n}\n\n// Sidebar badge that matches the accent\nexport function UnreadBadge({ count }) {\n  return (\n    <span className="bg-brand text-white text-xs font-bold\n                     w-5 h-5 rounded-full flex items-center justify-center"\n    >\n      {count}\n    </span>\n  );\n}`} />
+              <CodeBlock lang="js" code={`// tailwind.config.js\nmodule.exports = {\n  content: ['./src/**/*.{js,jsx,ts,tsx}'],\n  theme: {\n    extend: {\n      colors: {\n        brand:         'var(--ce-color-accent)',       // the main accent\n        'brand-hover': 'var(--ce-color-accent-hover)', // hover shade\n        'chat-user':   'var(--ce-bg-bubble-user)',     // user bubble fill\n        'chat-agent':  'var(--ce-bg-bubble-agent)',    // agent bubble fill\n        'chat-panel':  'var(--ce-bg-panel)',           // chat background\n      },\n    },\n  },\n};`} />
 
-              {/* ── Step 3 ─────────────────────────────────────────────── */}
+              {/* ── Step 2 ────────────────────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 2 — Use bg-brand / text-brand in your components</p>
+                <p className="text-xs text-slate-500">Write Tailwind classes as you normally would — colors just happen to live-sync with the chat.</p>
+              </div>
+              <CodeBlock lang="jsx" code={`// A simple call-to-action button that matches the chat accent\nexport function AskButton({ onClick }) {\n  return (\n    <button\n      onClick={onClick}\n      className="bg-brand hover:bg-brand-hover text-white\n                 font-semibold px-5 py-2.5 rounded-xl transition-colors"\n    >\n      Ask ConvEngine →\n    </button>\n  );\n}`} />
+
+              {/* ── Step 3 ────────────────────────────────────────────── */}
               <div className="space-y-1 mt-2">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Step 3 — Change the accent once, everything updates</p>
                 <p className="text-xs text-slate-500">
-                  Pass a new accent to ConvEngine via the <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">theme</code> prop.
-                  Your Tailwind components update automatically — they read the same CSS variable.
+                  Pass a new accent to <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">ConvEngineChat</code> via the <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">theme</code> prop.
+                  Every component using <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">bg-brand</code> or <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">text-brand</code> updates automatically.
                 </p>
               </div>
-              <CodeBlock lang="jsx" code={`// Changing the accent in ConvEngineChat...\n<ConvEngineChat\n  theme={{ 'color-accent': '#10b981', 'color-accent-hover': '#059669' }}\n/>\n\n// ...automatically updates bg-brand / text-brand everywhere in your app.\n// The AskButton above will now render in emerald — zero extra work.`} />
+              <CodeBlock lang="jsx" code={`// Switch to emerald theme — the button above turns green instantly\n<ConvEngineChat\n  theme={{\n    'color-accent':       '#10b981',\n    'color-accent-hover': '#059669',\n  }}\n/>\n\n// Switch to indigo — everything turns indigo\n<ConvEngineChat\n  theme={{ 'color-accent': '#6366f1', 'color-accent-hover': '#4f46e5' }}\n/>`} />
 
-              {/* ── Token reference ─────────────────────────────────────── */}
+              {/* ── Real-world example 1 ──────────────────────────────── */}
               <div className="space-y-1 mt-2">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">All mappable tokens</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Real-world example — notification banner</p>
+                <p className="text-xs text-slate-500">
+                  A banner that tells users the chat has a reply. It uses a soft tint of the accent for the background
+                  and the full accent for the button — all from <code className="font-mono bg-slate-100 px-1 rounded text-[11px]">bg-brand</code>.
+                </p>
+              </div>
+              <CodeBlock lang="jsx" code={`export function ChatNotificationBanner({ message, onOpen }) {\n  return (\n    <div className="bg-brand/10 border border-brand/30 rounded-2xl\n                    px-4 py-3 flex items-center gap-3">\n\n      {/* Pulsing dot in accent color */}\n      <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />\n\n      <p className="flex-1 text-sm text-brand font-medium">{message}</p>\n\n      <button\n        onClick={onOpen}\n        className="bg-brand hover:bg-brand-hover text-white\n                   text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"\n      >\n        Open chat\n      </button>\n    </div>\n  );\n}\n\n// Usage\n<ChatNotificationBanner message="ConvEngine has a response for you!" onOpen={openChat} />`} />
+              <TailwindNotificationPreview />
+
+              {/* ── Real-world example 2 ──────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Real-world example — sidebar badge &amp; nav highlight</p>
+                <p className="text-xs text-slate-500">
+                  An unread count badge and an active navigation link — both automatically brand-colored.
+                </p>
+              </div>
+              <CodeBlock lang="jsx" code={`// Unread message badge in your sidebar\nexport function UnreadBadge({ count }) {\n  return (\n    <span className="bg-brand text-white text-xs font-bold\n                     w-5 h-5 rounded-full flex items-center justify-center">\n      {count}\n    </span>\n  );\n}\n\n// Active nav item that matches the chat accent\nexport function NavItem({ label, active, onClick }) {\n  return (\n    <button\n      onClick={onClick}\n      className={\`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium\n        transition-colors\n        \${active\n          ? 'bg-brand/10 text-brand border-l-2 border-brand'\n          : 'text-slate-500 hover:bg-slate-100'\n        }\`}\n    >\n      {label}\n    </button>\n  );\n}`} />
+              <TailwindSidebarPreview />
+
+              {/* ── Token table ───────────────────────────────────────── */}
+              <div className="space-y-1 mt-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">All available CSS variables</p>
+                <p className="text-xs text-slate-500">Map any of these to a Tailwind alias and use it freely in your own components.</p>
               </div>
               <div className="overflow-x-auto rounded-xl border border-slate-100">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs uppercase text-slate-400 tracking-wider">
                       <th className="px-4 py-3 text-left font-bold">CSS Variable</th>
-                      <th className="px-4 py-3 text-left font-bold">Suggested Tailwind alias</th>
-                      <th className="px-4 py-3 text-left font-bold">Utilities unlocked</th>
+                      <th className="px-4 py-3 text-left font-bold">Suggested alias</th>
+                      <th className="px-4 py-3 text-left font-bold">Tailwind utilities you get</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 bg-white">
@@ -2128,15 +2926,9 @@ const myRenderer = {
                 </table>
               </div>
 
-              {/* ── Real-world example ───────────────────────────────────── */}
-              <div className="space-y-1 mt-2">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Real-world example — branded notification banner</p>
-                <p className="text-xs text-slate-500">A contextual banner that matches the active chat accent with zero hard-coded colors.</p>
-              </div>
-              <CodeBlock lang="jsx" code={`export function ChatNotificationBanner({ message, onOpen }) {\n  return (\n    <div className="\n      bg-brand/10 border border-brand/30\n      rounded-2xl px-4 py-3 flex items-center gap-3\n    ">\n      <div className="w-2 h-2 rounded-full bg-brand animate-pulse" />\n      <p className="flex-1 text-sm text-brand font-medium">{message}</p>\n      <button\n        onClick={onOpen}\n        className="\n          bg-brand hover:bg-brand-hover text-white\n          text-xs font-bold px-3 py-1.5 rounded-lg transition-colors\n        "\n      >\n        Open chat\n      </button>\n    </div>\n  );\n}\n\n// Usage alongside ConvEngineChat\n<ChatNotificationBanner\n  message="ConvEngine has a response for you"\n  onOpen={() => chatActionsRef.current?.prefillInput('')}\n/>`} />
-
-              <Tip color="amber" icon="⚠️" title="Tailwind v4 note">
-                In Tailwind v4, use <code className="font-mono text-xs bg-amber-100 px-1 rounded">@theme</code> in your CSS instead of <code className="font-mono text-xs bg-amber-100 px-1 rounded">tailwind.config.js</code>:{' '}
+              <Tip color="amber" icon="⚠️" title="Using Tailwind v4?">
+                In Tailwind v4, skip <code className="font-mono text-xs bg-amber-100 px-1 rounded">tailwind.config.js</code> and
+                add one line to your CSS instead:{' '}
                 <code className="font-mono text-xs bg-amber-100 px-1 rounded">{'@theme { --color-brand: var(--ce-color-accent); }'}</code>
               </Tip>
             </DocCardBody>
