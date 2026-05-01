@@ -260,7 +260,14 @@ function ColorPicker({ value, onChange }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Toggle (fixed — no overlay)
 // ─────────────────────────────────────────────────────────────────────────────
-function Toggle({ checked, onChange, label, hint }) {
+const MODE_BADGE = {
+  panel:      'bg-indigo-100 text-indigo-700',
+  sidepanel:  'bg-violet-100 text-violet-700',
+  fullscreen: 'bg-pink-100   text-pink-700',
+};
+
+function Toggle({ checked, onChange, label, hint, modes, accentColor }) {
+  const checkedBg = accentColor || '#6366f1';
   return (
     <div className="flex items-start gap-3">
       <button
@@ -268,8 +275,8 @@ function Toggle({ checked, onChange, label, hint }) {
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 ${checked ? 'bg-indigo-500' : 'bg-slate-200'}`}
-        style={{ width: 40, height: 22, overflow: 'hidden' }}
+        className={`relative mt-0.5 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${checked ? '' : 'bg-slate-200'}`}
+        style={{ width: 40, height: 22, overflow: 'hidden', backgroundColor: checked ? checkedBg : undefined, '--tw-ring-color': checkedBg }}
       >
         <span
           className="absolute top-[2px] left-0 bg-white rounded-full shadow transition-transform duration-200"
@@ -277,7 +284,12 @@ function Toggle({ checked, onChange, label, hint }) {
         />
       </button>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-700 leading-snug">{label}</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <p className="text-sm font-semibold text-slate-700 leading-snug">{label}</p>
+          {modes && modes.map((m) => (
+            <span key={m} className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${MODE_BADGE[m] ?? 'bg-slate-100 text-slate-500'}`}>{m}</span>
+          ))}
+        </div>
         <p className="text-xs text-slate-400 font-mono mt-0.5">{hint}</p>
       </div>
     </div>
@@ -290,6 +302,7 @@ function Toggle({ checked, onChange, label, hint }) {
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_ICON_SVGS = {
   // ── Content icons ────────────────────────────────────────────────────────
+  LandingAvatarIcon: `<svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="20" fill="currentColor" opacity="0.12"></circle><path d="M12 14a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2v-6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><path d="M20 10v2M17 22v5M23 22v5M13 26l4-2M23 24l4 2M17 28h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path><circle cx="17" cy="17" r="1" fill="currentColor"></circle><circle cx="23" cy="17" r="1" fill="currentColor"></circle></svg>`,
   ChatBubbleIcon: `<path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z" fill="currentColor"/>`,
   AgentIcon: `<path d="M6 6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-4"/><path d="M12 2v2"/><path d="M9 12v9"/><path d="M15 12v9"/><path d="M5 16l4-2"/><path d="M15 14l4 2"/><path d="M9 18h6"/><circle cx="10" cy="8" r=".7" fill="currentColor"/><circle cx="14" cy="8" r=".7" fill="currentColor"/>`,
   UserIcon: `<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0-8 0"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>`,
@@ -314,34 +327,35 @@ const DEFAULT_ICON_SVGS = {
 
 const ICON_META = {
   // ── Content icons ──────────────────────────────────────────────────────
-  ChatBubbleIcon:     { label: 'FAB / Launcher',      hint: 'config.icons.ChatBubbleIcon',     fill: true,  where: 'FAB open button',              group: 'Content Icons' },
-  AgentIcon:          { label: 'Agent Avatar',         hint: 'config.icons.AgentIcon',          fill: false, where: 'Every assistant message',      group: 'Content Icons' },
-  UserIcon:           { label: 'User Avatar',          hint: 'config.icons.UserIcon',           fill: false, where: 'Every user message',            group: 'Content Icons' },
-  SendIcon:           { label: 'Send Button',          hint: 'config.icons.SendIcon',           fill: true,  where: 'Composer send button',         group: 'Content Icons' },
-  ThumbUpIcon:        { label: 'Feedback Thumbs Up',   hint: 'config.icons.ThumbUpIcon',        fill: false, where: 'Feedback row (below AI)',       group: 'Content Icons' },
-  ThumbDownIcon:      { label: 'Feedback Thumbs Down', hint: 'config.icons.ThumbDownIcon',      fill: false, where: 'Feedback row (below AI)',       group: 'Content Icons' },
+  LandingAvatarIcon:  { label: 'Landing Avatar',       hint: 'config.icons.LandingAvatarIcon',  fill: false, where: 'Landing screen bot avatar',     group: 'Content Icons',    modes: ['panel','sidepanel','fullscreen'] },
+  ChatBubbleIcon:     { label: 'FAB / Launcher',       hint: 'config.icons.ChatBubbleIcon',     fill: true,  where: 'FAB open button',              group: 'Content Icons',    modes: ['panel','sidepanel'] },
+  AgentIcon:          { label: 'Agent Avatar',         hint: 'config.icons.AgentIcon',          fill: false, where: 'Every assistant message',      group: 'Content Icons',    modes: ['panel','sidepanel','fullscreen'] },
+  UserIcon:           { label: 'User Avatar',          hint: 'config.icons.UserIcon',           fill: false, where: 'Every user message',            group: 'Content Icons',    modes: ['panel','sidepanel','fullscreen'] },
+  SendIcon:           { label: 'Send Button',          hint: 'config.icons.SendIcon',           fill: true,  where: 'Composer send button',         group: 'Content Icons',    modes: ['panel','sidepanel','fullscreen'] },
+  ThumbUpIcon:        { label: 'Feedback Thumbs Up',   hint: 'config.icons.ThumbUpIcon',        fill: false, where: 'Feedback row (below AI)',       group: 'Content Icons',    modes: ['panel','sidepanel','fullscreen'] },
+  ThumbDownIcon:      { label: 'Feedback Thumbs Down', hint: 'config.icons.ThumbDownIcon',      fill: false, where: 'Feedback row (below AI)',       group: 'Content Icons',    modes: ['panel','sidepanel','fullscreen'] },
   // ── UI control icons ───────────────────────────────────────────────────
-  CloseIcon:          { label: 'Close',                hint: 'config.icons.CloseIcon',          fill: false, where: 'Panel close button',            group: 'UI Control Icons' },
-  MinimizeIcon:       { label: 'Minimize',             hint: 'config.icons.MinimizeIcon',       fill: false, where: 'Panel minimize button',         group: 'UI Control Icons' },
-  MaximizeIcon:       { label: 'Maximize',             hint: 'config.icons.MaximizeIcon',       fill: false, where: 'Panel maximize to fullscreen',  group: 'UI Control Icons' },
-  RestoreIcon:        { label: 'Restore',              hint: 'config.icons.RestoreIcon',        fill: false, where: 'Panel restore from fullscreen', group: 'UI Control Icons' },
-  RestoreFromMinIcon: { label: 'Restore from Min',     hint: 'config.icons.RestoreFromMinIcon', fill: false, where: 'Panel restore from minimized',  group: 'UI Control Icons' },
-  SunIcon:            { label: 'Light Mode Toggle',    hint: 'config.icons.SunIcon',            fill: false, where: 'Header dark/light toggle',      group: 'UI Control Icons' },
-  MoonIcon:           { label: 'Dark Mode Toggle',     hint: 'config.icons.MoonIcon',           fill: false, where: 'Header dark/light toggle',      group: 'UI Control Icons' },
-  AuditIcon:          { label: 'Audit Trail Toggle',   hint: 'config.icons.AuditIcon',          fill: false, where: 'Header audit toggle button',    group: 'UI Control Icons' },
-  NewChatIcon:        { label: 'New Chat',             hint: 'config.icons.NewChatIcon',        fill: false, where: 'Header new chat button',        group: 'UI Control Icons' },
-  LayoutIcon:         { label: 'Mode Picker',          hint: 'config.icons.LayoutIcon',         fill: false, where: 'Header mode picker button',     group: 'UI Control Icons' },
-  PopoutIcon:         { label: 'Popout',               hint: 'config.icons.PopoutIcon',         fill: false, where: 'Panel popout button',           group: 'UI Control Icons' },
-  PanelLeftIcon:      { label: 'Panel Left',           hint: 'config.icons.PanelLeftIcon',      fill: false, where: 'Mode picker → left sidepanel',  group: 'UI Control Icons' },
-  PanelRightIcon:     { label: 'Panel Right',          hint: 'config.icons.PanelRightIcon',     fill: false, where: 'Mode picker → right sidepanel', group: 'UI Control Icons' },
+  CloseIcon:          { label: 'Close',                hint: 'config.icons.CloseIcon',          fill: false, where: 'Panel close button',            group: 'UI Control Icons', modes: ['panel','sidepanel'] },
+  MinimizeIcon:       { label: 'Minimize',             hint: 'config.icons.MinimizeIcon',       fill: false, where: 'Panel minimize button',         group: 'UI Control Icons', modes: ['panel'] },
+  MaximizeIcon:       { label: 'Maximize',             hint: 'config.icons.MaximizeIcon',       fill: false, where: 'Panel maximize to fullscreen',  group: 'UI Control Icons', modes: ['panel'] },
+  RestoreIcon:        { label: 'Restore',              hint: 'config.icons.RestoreIcon',        fill: false, where: 'Panel restore from fullscreen', group: 'UI Control Icons', modes: ['panel'] },
+  RestoreFromMinIcon: { label: 'Restore from Min',     hint: 'config.icons.RestoreFromMinIcon', fill: false, where: 'Panel restore from minimized',  group: 'UI Control Icons', modes: ['panel'] },
+  SunIcon:            { label: 'Light Mode Toggle',    hint: 'config.icons.SunIcon',            fill: false, where: 'Header dark/light toggle',      group: 'UI Control Icons', modes: ['panel','sidepanel','fullscreen'], themeOnly: 'dark'  },
+  MoonIcon:           { label: 'Dark Mode Toggle',     hint: 'config.icons.MoonIcon',           fill: false, where: 'Header dark/light toggle',      group: 'UI Control Icons', modes: ['panel','sidepanel','fullscreen'], themeOnly: 'light' },
+  AuditIcon:          { label: 'Audit Trail Toggle',   hint: 'config.icons.AuditIcon',          fill: false, where: 'Header audit toggle button',    group: 'UI Control Icons', modes: ['fullscreen'] },
+  NewChatIcon:        { label: 'New Chat',             hint: 'config.icons.NewChatIcon',        fill: false, where: 'Header new chat button',        group: 'UI Control Icons', modes: ['panel','fullscreen'] },
+  LayoutIcon:         { label: 'Mode Picker',          hint: 'config.icons.LayoutIcon',         fill: false, where: 'Header mode picker button',     group: 'UI Control Icons', modes: ['panel'] },
+  PopoutIcon:         { label: 'Popout',               hint: 'config.icons.PopoutIcon',         fill: false, where: 'Panel popout button',           group: 'UI Control Icons', modes: ['panel'] },
+  PanelLeftIcon:      { label: 'Panel Left',           hint: 'config.icons.PanelLeftIcon',      fill: false, where: 'Mode picker → left sidepanel',  group: 'UI Control Icons', modes: ['panel'] },
+  PanelRightIcon:     { label: 'Panel Right',          hint: 'config.icons.PanelRightIcon',     fill: false, where: 'Mode picker → right sidepanel', group: 'UI Control Icons', modes: ['panel'] },
 };
 
 /** Renders a live SVG preview from raw inner-SVG markup */
-function SvgPreview({ innerSvg, fill = false, size = 28 }) {
+function SvgPreview({ innerSvg, fill = false, size = 28, accentColor = '#6366f1' }) {
   const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${fill ? 'currentColor' : 'none'}" stroke="${fill ? 'none' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${innerSvg}</svg>`;
   return (
     <div
-      style={{ color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', width: size + 8, height: size + 8 }}
+      style={{ color: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', width: size + 8, height: size + 8 }}
       dangerouslySetInnerHTML={{ __html: svgStr }}
     />
   );
@@ -377,6 +391,7 @@ const COLOR_DEFAULTS = {
   bubbleAgentText: { light: '#1e293b',  dark: '#f2f6fa' },
   panelBg:         { light: '#ffffff',  dark: '#212121' },
   composerBg:      { light: '#ffffff',  dark: '#2b2b2b' },
+  iconColor:       { light: '#64748b',  dark: '#9ca3af' },
 };
 
 function ColorVariantRow({ isDarkMode, value, defaultVal, onChange }) {
@@ -465,6 +480,260 @@ function ColorAssetInput({ configKey, label, hint, value, onChange }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Compact icon tile grid + edit modal
+// ─────────────────────────────────────────────────────────────────────────────
+function IconGrid({ iconSvgs, onIconChange, onIconReset, currentMode, accentColor = '#6366f1', iconColorSetting, previewDark = false }) {
+  const [editKey, setEditKey] = useState(null);
+  const [copied,  setCopied]  = useState(null);
+  const meta    = editKey ? ICON_META[editKey] : null;
+
+  // Resolve the icon preview color: use iconColor setting variant first, fall back to accentColor
+  const resolvedIconColor = previewDark
+    ? (iconColorSetting?.dark?.trim()  || iconColorSetting?.light?.trim() || accentColor)
+    : (iconColorSetting?.light?.trim() || iconColorSetting?.dark?.trim()  || accentColor);
+
+  const currentTheme = previewDark ? 'dark' : 'light';
+
+  function handleCopy(key) {
+    navigator.clipboard?.writeText(iconSvgs[key]).catch(() => {});
+    setCopied(key);
+    setTimeout(() => setCopied(null), 1500);
+  }
+
+  const groups = {};
+  Object.entries(ICON_META)
+    .filter(([, m]) => !currentMode || m.modes.includes(currentMode))
+    .filter(([, m]) => !m.themeOnly || m.themeOnly === currentTheme)
+    .forEach(([k, m]) => {
+      (groups[m.group] ??= []).push(k);
+    });
+
+  const anyModified = Object.keys(ICON_META).some(k => iconSvgs[k] !== DEFAULT_ICON_SVGS[k]);
+
+  return (
+    <>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Icons</p>
+          {anyModified && (
+            <button
+              onClick={onIconReset}
+              className="text-[10px] font-semibold text-indigo-500 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-400 px-2.5 py-1 rounded-lg transition-all bg-indigo-50 hover:bg-indigo-100"
+            >
+              ↺ Reset all
+            </button>
+          )}
+        </div>
+        {Object.entries(groups).map(([grpName, keys]) => (
+          <div key={grpName}>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{grpName}</p>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+              {keys.map((key) => {
+                const m = ICON_META[key];
+                const isModified = iconSvgs[key] !== DEFAULT_ICON_SVGS[key];
+                return (
+                  <div
+                    key={key}
+                    className="group relative flex flex-col items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl p-2 hover:border-indigo-200 hover:bg-white hover:shadow-sm transition-all"
+                  >
+                    {isModified && (
+                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                    )}
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-100">
+                      <SvgPreview innerSvg={iconSvgs[key]} fill={m.fill} size={18} accentColor={resolvedIconColor} />
+                    </div>
+                    <p className="text-[9px] font-medium text-slate-500 text-center leading-tight line-clamp-2 w-full">{m.label}</p>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pt-0.5">
+                      <button
+                        title="Copy SVG"
+                        onClick={() => handleCopy(key)}
+                        className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors text-[9px] font-bold"
+                      >
+                        {copied === key ? '✓' : '⎘'}
+                      </button>
+                      <button
+                        title="Edit SVG"
+                        onClick={() => setEditKey(key)}
+                        className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors text-[10px]"
+                      >
+                        ✏
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {editKey && meta && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setEditKey(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-5 w-[340px] space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-semibold text-slate-800 text-sm">{meta.label}</p>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{meta.hint}</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Used in: {meta.where}</p>
+              </div>
+              <button
+                onClick={() => setEditKey(null)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
+              >✕</button>
+            </div>
+            <div className="flex items-center justify-center h-14 bg-slate-50 rounded-xl border border-slate-100">
+              <SvgPreview innerSvg={iconSvgs[editKey]} fill={meta.fill} size={32} accentColor={resolvedIconColor} />
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Inner SVG markup</p>
+              <p className="text-[10px] text-slate-400">Paths/shapes only — no outer &lt;svg&gt; tag</p>
+              <textarea
+                rows={4}
+                value={iconSvgs[editKey]}
+                onChange={(e) => onIconChange(editKey, e.target.value)}
+                spellCheck={false}
+                className="w-full text-[10px] font-mono border border-slate-200 rounded-lg px-2.5 py-2 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-white resize-y"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              {iconSvgs[editKey] !== DEFAULT_ICON_SVGS[editKey] ? (
+                <button
+                  onClick={() => onIconChange(editKey, DEFAULT_ICON_SVGS[editKey])}
+                  className="text-xs text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-300 px-2.5 py-1 rounded-lg bg-white transition-all"
+                >
+                  ↺ Reset
+                </button>
+              ) : <span />}
+              <button
+                onClick={() => setEditKey(null)}
+                className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 px-4 py-1.5 rounded-lg transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Compact color tile grid + edit modal
+// ─────────────────────────────────────────────────────────────────────────────
+const COLOR_TILE_META = [
+  { key: 'bubbleUserBg',    label: 'User Bubble Bg',    hint: 'config.bubbleUserBg',    modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'bubbleUserText',  label: 'User Bubble Text',  hint: 'config.bubbleUserText',  modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'bubbleAgentBg',   label: 'Agent Bubble Bg',   hint: 'config.bubbleAgentBg',   modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'bubbleAgentText', label: 'Agent Bubble Text', hint: 'config.bubbleAgentText', modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'panelBg',         label: 'Panel Bg',          hint: 'config.panelBg',         modes: ['panel','sidepanel'] },
+  { key: 'composerBg',      label: 'Composer Bg',       hint: 'config.composerBg',      modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'iconColor',       label: 'Icon Color',        hint: 'config.iconColor',       modes: ['panel','sidepanel','fullscreen'] },
+];
+
+function ColorGrid({ settings, onChange, currentMode, accentColor = '#6366f1', previewDark = false }) {
+  const [editKey, setEditKey] = useState(null);
+  const editMeta = editKey ? COLOR_TILE_META.find((m) => m.key === editKey) : null;
+  const visibleMeta = currentMode
+    ? COLOR_TILE_META.filter((m) => m.modes.includes(currentMode))
+    : COLOR_TILE_META;
+
+  // Resolve the default for a key — bubbleUserBg light defaults to accentColor
+  function getDefault(key, variant) {
+    if (key === 'bubbleUserBg' && variant === 'light') return accentColor;
+    return COLOR_DEFAULTS[key]?.[variant] ?? (variant === 'light' ? '#e2e8f0' : '#374151');
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {visibleMeta.map(({ key, label, hint }) => {
+          const v = settings[key] ?? { light: '', dark: '' };
+          // Show only the currently-previewed variant
+          const displayBg  = previewDark
+            ? (v.dark?.trim()  || getDefault(key, 'dark'))
+            : (v.light?.trim() || getDefault(key, 'light'));
+          const isModified = v.light?.trim() || v.dark?.trim();
+          return (
+            <button
+              key={key}
+              onClick={() => setEditKey(key)}
+              className="group flex flex-col gap-1.5 bg-slate-50 border border-slate-100 rounded-xl p-2.5 hover:border-indigo-200 hover:bg-white hover:shadow-sm transition-all text-left"
+            >
+              <div className="flex w-full rounded-lg overflow-hidden h-6 border border-slate-200">
+                <div
+                  className="flex-1 flex items-center justify-center text-[8px] font-semibold select-none"
+                  style={{ background: displayBg }}
+                >
+                  {previewDark ? '🌙' : '☀️'}
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-[10px] font-semibold text-slate-600 leading-tight">{label}</p>
+                {isModified && <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />}
+              </div>
+              <p className="text-[9px] text-slate-400 font-mono truncate">{hint}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {editKey && editMeta && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setEditKey(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-5 w-[360px] space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-semibold text-slate-800 text-sm">{editMeta.label}</p>
+                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{editMeta.hint}</p>
+              </div>
+              <button
+                onClick={() => setEditKey(null)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
+              >✕</button>
+            </div>
+            <ColorAssetInput
+              configKey={editKey}
+              label={editMeta.label}
+              hint={editMeta.hint}
+              value={settings[editKey]}
+              onChange={(v) => onChange({ ...settings, [editKey]: v })}
+            />
+            <div className="flex items-center justify-between">
+              {(settings[editKey]?.light?.trim() || settings[editKey]?.dark?.trim()) ? (
+                <button
+                  onClick={() => onChange({ ...settings, [editKey]: { light: '', dark: '' } })}
+                  className="text-xs text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-300 px-2.5 py-1 rounded-lg bg-white transition-all"
+                >
+                  ↺ Reset
+                </button>
+              ) : <span />}
+              <button
+                onClick={() => setEditKey(null)}
+                className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 px-4 py-1.5 rounded-lg transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Playground
 // ─────────────────────────────────────────────────────────────────────────────
 function buildGeneratedCode(settings, iconSvgs) {
@@ -482,7 +751,8 @@ function buildGeneratedCode(settings, iconSvgs) {
     !settings.showLayoutPicker    ? '    showLayoutPicker: false,'    : null,
     !settings.showMaximize        ? '    showMaximize: false,'        : null,
     !settings.showMinimize        ? '    showMinimize: false,'        : null,
-    ...(['bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText','panelBg','composerBg'].map((key) => {
+    settings.composerShape === 'rect' ? `    composerShape: 'rect',` : null,
+    ...(['bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText','panelBg','composerBg','iconColor'].map((key) => {
       const v = settings[key];
       const l = v?.light?.trim(); const d = v?.dark?.trim();
       if (!l && !d) return null;
@@ -499,20 +769,36 @@ function buildGeneratedCode(settings, iconSvgs) {
 
 function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconReset }) {
   const generatedCode = buildGeneratedCode(settings, iconSvgs);
+  const [stickyCode, setStickyCode] = useState(false);
+  const normalizedMode = settings.chatMode === 'fullscreen' ? 'fullscreen'
+    : settings.chatMode?.startsWith('sidepanel') ? 'sidepanel' : 'panel';
+  const showFor = (...modes) => modes.includes(normalizedMode);
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
-      <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 rounded-t-2xl">
+      <div className="px-6 py-4 rounded-t-2xl" style={{ background: `linear-gradient(135deg, ${settings.accentColor} 0%, ${settings.accentColor}cc 100%)` }}>
         <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
           <span>🎛️</span> Live Config Playground
         </h3>
-        <p className="text-xs text-indigo-200 mt-0.5">Toggle settings below — the chat widget updates instantly.</p>
+        <p className="text-xs text-white/75 mt-0.5">Toggle settings below — the chat widget updates instantly.</p>
       </div>
 
-      {/* ── Sticky Generated Usage ── */}
-      <div className="sticky top-14 z-20 bg-white/95 backdrop-blur-sm border-b border-slate-100 shadow-sm px-5 py-3">
+      {/* ── Generated Usage ── */}
+      <div className={`${stickyCode ? 'sticky top-14 z-20 shadow-sm' : ''} bg-white/95 backdrop-blur-sm border-b border-slate-100 px-5 py-3`}>
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Generated Usage</p>
-          <span className="text-[10px] text-slate-400">Updates live as you change settings ↓</span>
+          <button
+            type="button"
+            onClick={() => setStickyCode((v) => !v)}
+            className={`flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-all select-none ${
+              stickyCode
+                ? 'text-white'
+                : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600'
+            }`}
+            style={stickyCode ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+          >
+            <svg viewBox="0 0 12 12" className="w-3 h-3" fill="currentColor"><path d="M3 1a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3.586l1.707 1.707A1 1 0 0 1 10 8H8v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8H2a1 1 0 0 1-.707-1.707L3 4.586V1z"/></svg>
+            Stick on top
+          </button>
         </div>
         <CodeBlock lang="jsx" code={generatedCode} />
       </div>
@@ -520,16 +806,16 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
       <div className="p-5 space-y-6">
         {/* ── Toggles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <Toggle checked={settings.showFeedback}          onChange={(v) => onChange({ ...settings, showFeedback: v })}          label="Show Feedback (👍👎)"    hint="config.showFeedback" />
-          <Toggle checked={settings.showAudit}             onChange={(v) => onChange({ ...settings, showAudit: v })}             label="Show Audit Trail"        hint="config.showAudit" />
-          <Toggle checked={settings.showDarkModeLightMode} onChange={(v) => onChange({ ...settings, showDarkModeLightMode: v })} label="Dark/Light Mode Toggle"  hint="config.showDarkModeLightMode" />
-          <Toggle checked={settings.showHeaderDot}       onChange={(v) => onChange({ ...settings, showHeaderDot: v })}       label="Header Dot"          hint="config.showHeaderDot" />
-          <Toggle checked={settings.showLandingAvatar}   onChange={(v) => onChange({ ...settings, showLandingAvatar: v })}   label="Landing Avatar"      hint="config.showLandingAvatar" />
-          <Toggle checked={settings.showLandingSubtitle} onChange={(v) => onChange({ ...settings, showLandingSubtitle: v })} label="Landing Subtitle"    hint="config.showLandingSubtitle" />
-          <Toggle checked={settings.showNewChat}       onChange={(v) => onChange({ ...settings, showNewChat: v })}       label="New Chat Button"      hint="config.showNewChat" />
-          <Toggle checked={settings.showLayoutPicker}  onChange={(v) => onChange({ ...settings, showLayoutPicker: v })}  label="Chat View Switcher"   hint="config.showLayoutPicker" />
-          <Toggle checked={settings.showMaximize}      onChange={(v) => onChange({ ...settings, showMaximize: v })}      label="Expand to Center"     hint="config.showMaximize" />
-          <Toggle checked={settings.showMinimize}      onChange={(v) => onChange({ ...settings, showMinimize: v })}      label="Minimize Button"      hint="config.showMinimize" />
+          <Toggle checked={settings.showFeedback}          onChange={(v) => onChange({ ...settings, showFeedback: v })}          label="Show Feedback (👍👎)"   hint="config.showFeedback"          modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
+          {showFor('fullscreen') && <Toggle checked={settings.showAudit}             onChange={(v) => onChange({ ...settings, showAudit: v })}             label="Show Audit Trail"       hint="config.showAudit"             modes={['fullscreen']} accentColor={settings.accentColor} />}
+          <Toggle checked={settings.showDarkModeLightMode} onChange={(v) => onChange({ ...settings, showDarkModeLightMode: v })} label="Dark/Light Mode Toggle" hint="config.showDarkModeLightMode" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
+          <Toggle checked={settings.showHeaderDot}       onChange={(v) => onChange({ ...settings, showHeaderDot: v })}       label="Header Dot"         hint="config.showHeaderDot"       modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
+          <Toggle checked={settings.showLandingAvatar}   onChange={(v) => onChange({ ...settings, showLandingAvatar: v })}   label="Landing Avatar"     hint="config.showLandingAvatar"   modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
+          <Toggle checked={settings.showLandingSubtitle} onChange={(v) => onChange({ ...settings, showLandingSubtitle: v })} label="Landing Subtitle"   hint="config.showLandingSubtitle" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} />
+          {showFor('panel','fullscreen') && <Toggle checked={settings.showNewChat}       onChange={(v) => onChange({ ...settings, showNewChat: v })}       label="New Chat Button"    hint="config.showNewChat"      modes={['panel','fullscreen']} accentColor={settings.accentColor} />}
+          {showFor('panel') && <Toggle checked={settings.showLayoutPicker}  onChange={(v) => onChange({ ...settings, showLayoutPicker: v })}  label="Chat View Switcher" hint="config.showLayoutPicker" modes={['panel']} accentColor={settings.accentColor} />}
+          {showFor('panel') && <Toggle checked={settings.showMaximize}      onChange={(v) => onChange({ ...settings, showMaximize: v })}      label="Expand to Center"   hint="config.showMaximize"     modes={['panel']} accentColor={settings.accentColor} />}
+          {showFor('panel') && <Toggle checked={settings.showMinimize}      onChange={(v) => onChange({ ...settings, showMinimize: v })}      label="Minimize Button"    hint="config.showMinimize"     modes={['panel']} accentColor={settings.accentColor} />}
         </div>
 
         <hr className="border-slate-100" />
@@ -573,9 +859,10 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
               <button key={id} onClick={() => onChange({ ...settings, chatMode: id })}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                   settings.chatMode === id
-                    ? 'bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-200'
+                    ? 'text-white shadow-md'
                     : 'border-slate-200 text-slate-500 hover:bg-slate-50'
-                }`}>
+                }`}
+                style={settings.chatMode === id ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}>
                 {label}
               </button>
             ))}
@@ -598,19 +885,39 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
                   showLayoutPicker: String(settings.showLayoutPicker),
                   showMaximize:    String(settings.showMaximize),
                   showMinimize:    String(settings.showMinimize),
+                  composerShape:   settings.composerShape,
                 });
                 window.open(`/fullscreen?${p.toString()}`, '_blank', 'noopener,noreferrer');
               }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
                 settings.chatMode === 'fullscreen'
-                  ? 'bg-violet-500 border-violet-500 text-white shadow-md shadow-violet-200'
+                  ? 'text-white shadow-md'
                   : 'border-violet-200 text-violet-600 hover:bg-violet-50'
-              }`}>
+              }`}
+              style={settings.chatMode === 'fullscreen' ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}>
               ⛶ Fullscreen
               <svg viewBox="0 0 12 12" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M7 1h4v4M11 1l-5 5M5 11H1V7M1 11l5-5" />
               </svg>
             </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Composer Shape</p>
+          <div className="flex gap-2">
+            {[{id:'round',label:'⬭ Round (pill)'},{id:'rect',label:'▭ Rect'}].map(({id,label})=>(
+              <button
+                key={id}
+                onClick={() => onChange({ ...settings, composerShape: id })}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  settings.composerShape === id
+                    ? 'text-white shadow-md'
+                    : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                }`}
+                style={settings.composerShape === id ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+              >{label}</button>
+            ))}
           </div>
         </div>
 
@@ -639,72 +946,10 @@ function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, onIconRes
               {settings.previewDark ? '🌙 Dark preview' : '☀️ Light preview'}
             </button>
           </div>
-          <div className="space-y-4">
-            <ColorAssetInput configKey="bubbleUserBg"    label="User bubble bg"    hint="config.bubbleUserBg"    value={settings.bubbleUserBg}    onChange={(v) => onChange({ ...settings, bubbleUserBg:    v })} />
-            <ColorAssetInput configKey="bubbleUserText"  label="User bubble text"  hint="config.bubbleUserText"  value={settings.bubbleUserText}  onChange={(v) => onChange({ ...settings, bubbleUserText:  v })} />
-            <ColorAssetInput configKey="bubbleAgentBg"   label="Agent bubble bg"   hint="config.bubbleAgentBg"   value={settings.bubbleAgentBg}   onChange={(v) => onChange({ ...settings, bubbleAgentBg:   v })} />
-            <ColorAssetInput configKey="bubbleAgentText" label="Agent bubble text" hint="config.bubbleAgentText" value={settings.bubbleAgentText} onChange={(v) => onChange({ ...settings, bubbleAgentText: v })} />
-            <ColorAssetInput configKey="panelBg"         label="Panel bg"          hint="config.panelBg"         value={settings.panelBg}         onChange={(v) => onChange({ ...settings, panelBg:         v })} />
-            <ColorAssetInput configKey="composerBg"      label="Composer bg"       hint="config.composerBg"      value={settings.composerBg}      onChange={(v) => onChange({ ...settings, composerBg:      v })} />
-          </div>
+          <ColorGrid settings={settings} onChange={onChange} currentMode={normalizedMode} accentColor={settings.accentColor} previewDark={settings.previewDark} />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Icons</p>
-            <button
-              onClick={onIconReset}
-              className="text-[10px] font-semibold text-indigo-500 hover:text-indigo-700 border border-indigo-200 hover:border-indigo-400 px-2.5 py-1 rounded-lg transition-all bg-indigo-50 hover:bg-indigo-100"
-            >
-              ↺ Reset to defaults
-            </button>
-          </div>
-          <p className="text-[11px] text-slate-400">Paste inner SVG markup (paths/shapes only, no outer &lt;svg&gt; tag). Updates live.</p>
-          <div className="space-y-3">
-            {Object.entries(ICON_META).reduce((acc, [key, meta], idx, arr) => {
-              const { label, hint, fill, where, group } = meta;
-              const prevGroup = idx > 0 ? arr[idx - 1][1].group : null;
-              if (group !== prevGroup) {
-                acc.push(
-                  <div key={`grp-${group}`} className="pt-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{group}</p>
-                  </div>
-                );
-              }
-              const isDefault = iconSvgs[key] === DEFAULT_ICON_SVGS[key];
-              acc.push(
-                <div key={key} className="rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white border border-slate-200 flex-shrink-0">
-                      <SvgPreview innerSvg={iconSvgs[key]} fill={fill} size={22} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-700">{label}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">{hint}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Used in: {where}</p>
-                    </div>
-                    {!isDefault && (
-                      <button
-                        onClick={() => onIconChange(key, DEFAULT_ICON_SVGS[key])}
-                        className="text-[10px] text-slate-400 hover:text-indigo-500 px-2 py-0.5 rounded border border-slate-200 hover:border-indigo-300 bg-white transition-all"
-                      >
-                        reset
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    rows={2}
-                    value={iconSvgs[key]}
-                    onChange={(e) => onIconChange(key, e.target.value)}
-                    spellCheck={false}
-                    className="w-full text-[10px] font-mono border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-white resize-y"
-                  />
-                </div>
-              );
-              return acc;
-            }, [])}
-          </div>
-        </div>
+        <IconGrid iconSvgs={iconSvgs} onIconChange={onIconChange} onIconReset={onIconReset} currentMode={normalizedMode} accentColor={settings.accentColor} iconColorSetting={settings.iconColor} previewDark={settings.previewDark} />
 
       </div>
     </div>
@@ -776,6 +1021,8 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false }) {
     bubbleAgentText: { light: '', dark: '' },
     panelBg:         { light: '', dark: '' },
     composerBg:      { light: '', dark: '' },
+    iconColor:       { light: '', dark: '' },
+    composerShape:   'round',
     // Preview
     previewDark:     false,
   });
@@ -858,13 +1105,15 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false }) {
             <SectionHeader gradient="bg-gradient-to-r from-sky-500 to-indigo-600" icon="📦" title="Installation" subtitle="Get convengine-chat into your project" />
             <DocCardBody>
               <Tip color="blue" icon="💡" title="Requirements">React 18+ and react-dom. Peer dependencies only — no bundled React copy.</Tip>
-              <CodeBlock lang="bash" code={`npm install convengine-chat\n# or link a local build during development\nnpm install ../convengine-chat`} />
+              <CodeBlock lang="bash" code={`npm install @salilvnair/convengine-chat\n# or link a local build during development\nnpm install ../convengine-chat`} />
               <p className="text-sm text-slate-600">Import the CSS once in your app entry:</p>
-              <CodeBlock lang="jsx" code={`// app/globals.css  (or your root layout)\nimport 'convengine-chat/style.css';`} />
+              <CodeBlock lang="jsx" code={`// app/layout.jsx  (or any JS/JSX entry file)\nimport '@salilvnair/convengine-chat/style.css';`} />
               <Tip color="amber" icon="⚡" title="Next.js users">
-                Add <code className="font-mono text-xs bg-amber-100 px-1 rounded">transpilePackages: [&apos;convengine-chat&apos;]</code> to your <code className="font-mono text-xs bg-amber-100 px-1 rounded">next.config.mjs</code>.
+                Add <code className="font-mono text-xs bg-amber-100 px-1 rounded">transpilePackages: [&apos;@salilvnair/convengine-chat&apos;]</code> to your <code className="font-mono text-xs bg-amber-100 px-1 rounded">next.config.mjs</code>.{' '}
+                <strong>Only needed when using a local <code className="font-mono text-xs bg-amber-100 px-1 rounded">file:</code> path during development</strong> — not required once the package is published to npm,
+                because the published version ships only the pre-built <code className="font-mono text-xs bg-amber-100 px-1 rounded">dist/</code> output (no raw JSX).
               </Tip>
-              <CodeBlock lang="js" code={`// next.config.mjs\nconst nextConfig = {\n  transpilePackages: ['convengine-chat'],\n};\nexport default nextConfig;`} />
+              <CodeBlock lang="js" code={`// next.config.mjs\nconst nextConfig = {\n  transpilePackages: ['@salilvnair/convengine-chat'],\n};\nexport default nextConfig;`} />
             </DocCardBody>
           </DocCard>
 
@@ -888,8 +1137,8 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false }) {
               </Tip>
 
               <CodeBlock lang="jsx" code={
-`import { ConvEngineChat, useChatActions } from 'convengine-chat';
-import 'convengine-chat/style.css'; // once in your app entry
+`import { ConvEngineChat, useChatActions } from '@salilvnair/convengine-chat';
+import '@salilvnair/convengine-chat/style.css'; // once in your app entry
 
 // ─── Optional: custom icon components ───────────────────────────────────────
 // Each icon receives className="ce-icon" — omit width/height; CSS sizes it.
@@ -1319,7 +1568,7 @@ const myRenderer = {
               </div>
 
               {/* ── Full example ─────────────────────────────────────────── */}
-              <CodeBlock lang="jsx" code={`import { ConvEngineChat } from 'convengine-chat';
+              <CodeBlock lang="jsx" code={`import { ConvEngineChat } from '@salilvnair/convengine-chat';
 
 // 1. Create your icon components.
 //    Use className="ce-icon" so the library can size them correctly.
@@ -1396,7 +1645,7 @@ function HeartIcon(props) {
               <Tip color="violet" icon="📌" title="Scope">
                 <code className="font-mono text-xs bg-violet-100 px-1 rounded">useChatActions</code> only works inside components rendered within <code className="font-mono text-xs bg-violet-100 px-1 rounded">&lt;ConvEngineChat&gt;</code> — i.e. custom renderer components.
               </Tip>
-              <CodeBlock lang="jsx" code={`import { useChatActions } from 'convengine-chat';\n\n// Inside a renderer or any child of <ConvEngineChat>:\nfunction HelpButton() {\n  const { actions } = useChatActions();\n  return (\n    <button\n      className="ce-interactive-submit"\n      onClick={() => actions.submitSilent({ intent: 'help' })}\n    >\n      Get Help\n    </button>\n  );\n}`} />
+              <CodeBlock lang="jsx" code={`import { useChatActions } from '@salilvnair/convengine-chat';\n\n// Inside a renderer or any child of <ConvEngineChat>:\nfunction HelpButton() {\n  const { actions } = useChatActions();\n  return (\n    <button\n      className="ce-interactive-submit"\n      onClick={() => actions.submitSilent({ intent: 'help' })}\n    >\n      Get Help\n    </button>\n  );\n}`} />
             </DocCardBody>
           </DocCard>
 

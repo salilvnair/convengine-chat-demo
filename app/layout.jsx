@@ -1,4 +1,5 @@
 import './globals.css';
+import '@salilvnair/convengine-chat/style.css';
 
 export const metadata = {
   title: 'ConvEngine Chat Demo — Dashboard',

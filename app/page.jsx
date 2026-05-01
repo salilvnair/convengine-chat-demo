@@ -1,7 +1,7 @@
 'use client';
 
 import { useState }            from 'react';
-import { ConvEngineChat }       from 'convengine-chat';
+import { ConvEngineChat }       from '@salilvnair/convengine-chat';
 import { MetricCard }           from './components/MetricCard.jsx';
 import { RevenueChart }         from './components/RevenueChart.jsx';
 import { OrdersTable }          from './components/OrdersTable.jsx';
@@ -169,7 +169,7 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
+        <div className="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
           {/* Logo + back */}
           <button
             onClick={onBack}
@@ -216,7 +216,7 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-screen-2xl mx-auto px-6 py-8">
         {children}
         <div className="h-28" />
       </main>
@@ -361,6 +361,8 @@ function QuickstartApp({ onBack }) {
             bubbleAgentText:       chatSettings.bubbleAgentText,
             panelBg:               chatSettings.panelBg,
             composerBg:            chatSettings.composerBg,
+            iconColor:             chatSettings.iconColor,
+            composerShape:         chatSettings.composerShape,
             icons:                 iconComponents,
             renderers:             interactiveRenderers,
           }}

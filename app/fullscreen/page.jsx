@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ConvEngineChat } from 'convengine-chat';
+import { ConvEngineChat } from '@salilvnair/convengine-chat';
 import { interactiveRenderers } from '../components/InteractiveRenderers.jsx';
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -24,6 +24,7 @@ function FullscreenChat() {
   const showLayoutPicker = params.get('showLayoutPicker') !== 'false';
   const showMaximize     = params.get('showMaximize')     !== 'false';
   const showMinimize     = params.get('showMinimize')     !== 'false';
+  const composerShape    = params.get('composerShape')    === 'rect' ? 'rect' : 'round';
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#fff' }}>
@@ -44,6 +45,7 @@ function FullscreenChat() {
           showLayoutPicker,
           showMaximize,
           showMinimize,
+          composerShape,
           renderers:             interactiveRenderers,
         }}
         theme={{ 'color-accent': accent }}

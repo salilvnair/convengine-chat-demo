@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "convengine-chat": "file:../convengine-chat",
+    "@salilvnair/convengine-chat": "file:../convengine-chat",
     "next": "14.2.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
