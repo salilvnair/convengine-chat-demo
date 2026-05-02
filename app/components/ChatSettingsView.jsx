@@ -863,7 +863,7 @@ export const flightCardRenderer = {
 //     { inputParams: { action: "track_detail", orderId: "CE-28471" } }
 //   • YOUR BACKEND detects action === "track_detail" and returns a detail card.
 //
-// "Contact Support" → actions.prefillInput(`I need help with order #${orderId}`)
+// "Contact Support" → actions.prefillInput(\`I need help with order #\${orderId}\`)
 //   • Fills the chat composer with the string — NOTHING is sent yet
 //   • USER reviews/edits the pre-filled text and presses Send manually
 //   • Only then does ConvEngine POST to your /chat endpoint with the final text
