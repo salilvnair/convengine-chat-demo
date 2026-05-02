@@ -1,6 +1,6 @@
 'use client';
 
-import { MONTHLY_REVENUE, CONVERSION_FUNNEL, TOP_PRODUCTS } from '../data/dashboard.js';
+import { MONTHLY_REVENUE, CONVERSION_FUNNEL, TOP_PRODUCTS } from '../../data/dashboard.js';
 
 function MonthlyChart({ data }) {
   const max = Math.max(...data.map((d) => d.amount));

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ALL_ORDERS } from '../data/dashboard.js';
+import { ALL_ORDERS } from '../../data/dashboard.js';
 
 const STATUS_STYLES = {
   Completed:  'text-emerald-700 bg-emerald-50',

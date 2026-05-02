@@ -11,6 +11,7 @@
  */
 
 import DATA from './fake-chat.json';
+import { buildFaqResponsePayloadFromFakeChat } from './faq-demo.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -148,6 +149,37 @@ export function matchResponse(input) {
     const dob     = (parts.find((p) => p.toLowerCase().startsWith('dob:')) ?? 'DOB: not provided').replace(/^dob:\s*/i, '');
     const pick = FORM_SUBMIT_RESPONSES[Math.floor(Math.random() * FORM_SUBMIT_RESPONSES.length)];
     return pick(name, country, dob);
+  }
+
+  // ── Stage 0d: FAQ / knowledge-base handler ─────────────────────────────────
+  // Intercepts help / how-to / what-is style questions and returns a
+  // FAQResponse renderer payload so the custom renderer card is shown.
+  const FAQ_TRIGGERS = [
+    /\bhow\s+to\b/i,
+    /\bwhat\s+is\b/i,
+    /\bwhat\s+are\b/i,
+    /\bhow\s+do\s+i\b/i,
+    /\bcan\s+i\b/i,
+    /\bwhere\s+(can|do|is)\b/i,
+    /\breset\b/i,
+    /\bforgot\b/i,
+    /\bpassword\b/i,
+    /\bhelp\b/i,
+    /\bguide\b/i,
+    /\btutorial\b/i,
+    /\bexplain\b/i,
+    /\bwhy\s+(is|does|do|can|should)\b/i,
+  ];
+  // Don't hijack existing Stage-0 renderer triggers
+  const NOT_FAQ = [
+    /^buy now cart items:/i,
+    /^book .+ at \$/i,
+    /^form submitted:/i,
+  ];
+  const looksFaq   = FAQ_TRIGGERS.some((re) => re.test(input));
+  const notHijack  = NOT_FAQ.every((re) => !re.test(input));
+  if (looksFaq && notHijack) {
+    return buildFaqResponsePayloadFromFakeChat(input, 3);
   }
 
   // ── Stage 1: Direct exact match ──────────────────────────────────────────

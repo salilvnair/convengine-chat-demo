@@ -519,6 +519,72 @@ export const dataTableRenderer = {
   Component: DataTableComponent,
 };
 
+/* ── FAQResponse ─────────────────────────────────────────────────────────── */
+function confidenceColor(score = 0) {
+  if (score >= 0.92) return { bg: '#dcfce7', fg: '#166534', border: '#bbf7d0', label: 'High' };
+  if (score >= 0.86) return { bg: '#fef3c7', fg: '#92400e', border: '#fde68a', label: 'Medium' };
+  return { bg: '#fee2e2', fg: '#991b1b', border: '#fecaca', label: 'Low' };
+}
+
+const FAQ_BADGE_PALETTE = [
+  { bg: '#dbeafe', fg: '#1e40af', border: '#bfdbfe' },
+  { bg: '#dcfce7', fg: '#166534', border: '#bbf7d0' },
+  { bg: '#ede9fe', fg: '#5b21b6', border: '#ddd6fe' },
+  { bg: '#fef3c7', fg: '#92400e', border: '#fde68a' },
+  { bg: '#fce7f3', fg: '#9d174d', border: '#fbcfe8' },
+  { bg: '#f0fdf4', fg: '#065f46', border: '#a7f3d0' },
+];
+
+function FAQResponseComponent({ payload }) {
+  const answer = payload?.answer;
+  const confidence = typeof payload?.confidence === 'number' ? payload.confidence : null;
+  const matchedFaqs = Array.isArray(payload?.matchedFaqs) ? payload.matchedFaqs : [];
+
+  return (
+    <div className="ce-interactive-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* top row: colorful numeric FAQ ID badges left, confidence % right */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+          {matchedFaqs.map((f, i) => {
+            const c = FAQ_BADGE_PALETTE[i % FAQ_BADGE_PALETTE.length];
+            return (
+              <span key={f.faqId || i} style={{
+                fontSize: '0.65rem', fontWeight: 700,
+                color: c.fg, background: c.bg, border: `1px solid ${c.border}`,
+                borderRadius: 999, padding: '2px 7px',
+              }}>
+                {f.faqId}
+              </span>
+            );
+          })}
+        </div>
+        {confidence !== null && (
+          <span style={{
+            fontSize: '0.68rem', fontWeight: 700,
+            color: '#1e40af', background: '#dbeafe', border: '1px solid #bfdbfe',
+            borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap',
+          }}>
+            {(confidence * 100).toFixed(0)}%
+          </span>
+        )}
+      </div>
+
+      {/* answer only */}
+      {answer && (
+        <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--ce-fg)' }}>{answer}</p>
+      )}
+    </div>
+  );
+}
+
+export const faqResponseRenderer = {
+  key: 'FAQResponse',
+  priority: 210,
+  hideBubble: true,
+  match: ({ effectiveType }) => effectiveType === 'FAQResponse',
+  Component: FAQResponseComponent,
+};
+
 /* ── CompleteForm ─────────────────────────────────────────────────────────── */
 const COUNTRIES = ['United States','United Kingdom','Canada','Australia','India','Germany','France','Singapore','Japan','Other'];
 const GENDER_OPTIONS = ['Male','Female','Non-binary','Prefer not to say'];
@@ -1008,6 +1074,7 @@ export const interactiveRenderers = [
   flightCardRenderer,
   orderTrackerRenderer,
   productRecommendationRenderer,
+  faqResponseRenderer,
   dataTableRenderer,
   completeFormRenderer,
 ];

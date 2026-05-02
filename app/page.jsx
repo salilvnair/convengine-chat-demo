@@ -2,16 +2,16 @@
 
 import { useState, useRef }   from 'react';
 import { ConvEngineChat }       from '@salilvnair/convengine-chat';
-import { MetricCard }           from './components/MetricCard.jsx';
-import { RevenueChart }         from './components/RevenueChart.jsx';
-import { OrdersTable }          from './components/OrdersTable.jsx';
-import { ChannelsPanel }        from './components/ChannelsPanel.jsx';
-import { OrdersView }           from './components/OrdersView.jsx';
-import { AnalyticsView }        from './components/AnalyticsView.jsx';
-import { ProfileView }          from './components/ProfileView.jsx';
-import { ChatSettingsView }     from './components/ChatSettingsView.jsx';
-import { ProfileDropdown }      from './components/ProfileDropdown.jsx';
-import { interactiveRenderers } from './components/InteractiveRenderers.jsx';
+import { MetricCard }           from './components/demo/MetricCard.jsx';
+import { RevenueChart }         from './components/demo/RevenueChart.jsx';
+import { OrdersTable }          from './components/demo/OrdersTable.jsx';
+import { ChannelsPanel }        from './components/demo/ChannelsPanel.jsx';
+import { OrdersView }           from './components/demo/OrdersView.jsx';
+import { AnalyticsView }        from './components/demo/AnalyticsView.jsx';
+import { ProfileView }          from './components/demo/ProfileView.jsx';
+import { ChatSettingsView }     from './components/chat/settings/ChatSettingsView.jsx';
+import { ProfileDropdown }      from './components/demo/ProfileDropdown.jsx';
+import { interactiveRenderers } from './components/chat/InteractiveRenderers.jsx';
 import { METRICS, WEEKLY_REVENUE, RECENT_ORDERS, TOP_CHANNELS } from './data/dashboard.js';
 
 /* ─────────────────────────────────────────────────────────────────────────────

@@ -13,3 +13,14 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Config doc row highlight — triggered by scrollToConfigProp() */
+tr[data-ce-highlight="true"] {
+  animation: ceConfigHighlight 1.8s ease-out forwards;
+}
+
+@keyframes ceConfigHighlight {
+  0%   { background-color: rgba(99, 102, 241, 0.18); }
+  60%  { background-color: rgba(99, 102, 241, 0.10); }
+  100% { background-color: transparent; }
+}

@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ConvEngineChat } from '@salilvnair/convengine-chat';
-import { interactiveRenderers } from '../components/InteractiveRenderers.jsx';
+import { interactiveRenderers } from '../components/chat/InteractiveRenderers.jsx';
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Inner component — reads URL params so it can be wrapped in Suspense
