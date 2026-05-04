@@ -2,8 +2,6 @@
 const isExport = process.env.NEXT_EXPORT === '1';
 
 const nextConfig = {
-  transpilePackages: ['@salilvnair/convengine-chat'],
-  // Static export mode — enabled by NEXT_EXPORT=1 (used by build:all / build:sync)
   ...(isExport && { output: 'export' }),
 };
 

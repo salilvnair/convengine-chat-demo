@@ -43,6 +43,8 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     composerShape:   'round',
     // Preview
     previewDark:     false,
+    // Message enrichment
+    messageEnrichment: { mode: 'none', prefix: '', postfix: '', props: {} },
   });
 
   const [iconSvgs, setIconSvgs] = useState({ ...DEFAULT_ICON_SVGS });
@@ -107,6 +109,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
           <NavDot href="#quickstart">Quick Start</NavDot>
           <NavDot href="#props">Component Props</NavDot>
           <NavDot href="#config">config Object</NavDot>
+          <NavDot href="#backend">Backend Routes</NavDot>
           <NavDot href="#colors">Color Theming</NavDot>
           <NavDot href="#theme">Theme Tokens</NavDot>
           <NavDot href="#tailwind">Tailwind Integration</NavDot>
@@ -251,8 +254,9 @@ const myRenderer = {
                 <code className="font-mono text-xs bg-amber-100 px-1 rounded">apiHost</code> is called from the browser. Make sure your ConvEngine backend has CORS enabled for your frontend origin.
               </Tip>
               <PropsTable>
-                <PropRow prop="apiHost"               type='string'   defaultVal='"http://localhost:8080"'                     description='Base URL of your ConvEngine backend.' />
-                <PropRow prop="conversationId"        type='string'   defaultVal='undefined'                                   description='Resume an existing conversation by ID.' />
+                <PropRow prop="apiHost"               type='string'   defaultVal='""'            description='Base URL of your backend. Omit for same-origin servers. Pass a full URL (e.g. "http://localhost:8080") for a separate backend.' />
+                <PropRow prop="conversationId"        type='string'   defaultVal='undefined'     description='Resume an existing conversation by ID.' />
+                <PropRow prop="apiEndpoints"          type='object'   defaultVal='undefined'     description='Override individual endpoint paths. Keys: message, feedback, audit. Each is a path ("/api/v1/message") or full URL. Unspecified keys fall back to {apiHost}/api/v1/conversation/{name}. See Backend Routes section.' />
                 <PropRow prop="title"                 type='string'   defaultVal='"ConvEngine Assistant"'                      description='Header title and landing screen heading.' />
                 <PropRow prop="subtitle"              type='string'   defaultVal={"\"Ask me anything \u2014 I'll do my best to help.\""} description='Landing screen subtitle shown below the title.' />
                 <PropRow prop="placeholder"           type='string'   defaultVal='"Ask ConvEngine…"'                           description='Composer input placeholder text.' />
@@ -279,6 +283,73 @@ const myRenderer = {
                 <PropRow prop="onMessage"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
                 <PropRow prop="onResponse"            type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
               </PropsTable>
+            </DocCardBody>
+          </DocCard>
+
+          {/* ── Backend Routes ── */}
+          <DocCard id="backend">
+            <SectionHeader gradient="bg-gradient-to-r from-emerald-500 to-teal-600" icon="🔌" title="Backend Routes" subtitle="Default paths and how to override them with apiEndpoints" />
+            <DocCardBody>
+              <Tip color="green" icon="💡" title="Same-origin? Just omit apiHost">
+                When your chat widget and API server are on the same domain, you don&apos;t need <code className="font-mono text-xs bg-emerald-100 px-1 rounded">apiHost</code> at all — it defaults to the page origin automatically.
+              </Tip>
+
+              {/* Default routes table */}
+              <div>
+                <p><span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Default routes</span> <span className="text-xs font-bold text-slate-500 tracking-wider mb-2">(no apiEndpoints needed)</span></p>
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs uppercase text-slate-400 tracking-wider">
+                        <th className="px-4 py-3 text-left font-bold">Method</th>
+                        <th className="px-4 py-3 text-left font-bold">Default path</th>
+                        <th className="px-4 py-3 text-left font-bold">Purpose</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 bg-white">
+                      {[
+                        ['POST', '/api/v1/conversation/message', 'Send user message, receive assistant response'],
+                        ['POST', '/api/v1/conversation/feedback', 'Submit 👍 / 👎 feedback on a message'],
+                        ['GET',  '/api/v1/conversation/audit/:conversationId', 'Fetch the full conversation audit trail'],
+                      ].map(([method, path, desc]) => (
+                        <tr key={path} className="hover:bg-emerald-50/30">
+                          <td className="px-4 py-2.5">
+                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${method === 'GET' ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-700'}`}>{method}</span>
+                          </td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-indigo-600 font-semibold">{path}</td>
+                          <td className="px-4 py-2.5 text-sm text-slate-600">{desc}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Same-origin example */}
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Same-origin server (Express / Hapi / Fastify)</p>
+                <CodeBlock lang="js" code={`// Express — register default paths\napp.post('/api/v1/conversation/message',  messageHandler);\napp.post('/api/v1/conversation/feedback', feedbackHandler);\napp.get( '/api/v1/conversation/audit/:conversationId', auditHandler);`} />
+                <CodeBlock lang="jsx" code={`// No apiHost or apiEndpoints needed\n<ConvEngineChat config={{}} />`} />
+              </div>
+
+              {/* apiEndpoints override */}
+              <div>
+                <p><span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Custom route paths — </span> <span className="text-xs font-bold text-slate-500 tracking-wider mb-2">apiEndpoints </span></p>
+                <p className="text-sm text-slate-600 mb-2">Override only the routes that differ from the defaults. Unspecified keys keep their default paths.</p>
+                <CodeBlock lang="js" code={`// Express — your own paths\napp.post('/api/v1/message',  messageHandler);\napp.post('/api/v1/feedback', feedbackHandler);\napp.get( '/api/v1/audit/:conversationId', auditHandler);`} />
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    apiEndpoints: {\n      message:  '/api/v1/message',\n      feedback: '/api/v1/feedback',\n      audit:    '/api/v1/audit',  // /:conversationId appended automatically\n    },\n  }}\n/>`} />
+              </div>
+
+              {/* Cross-origin */}
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cross-origin backend</p>
+                <CodeBlock lang="jsx" code={`// Separate backend server\n<ConvEngineChat\n  config={{\n    apiHost: 'http://localhost:8080',\n  }}\n/>\n\n// Separate backend + custom paths\n<ConvEngineChat\n  config={{\n    apiHost: 'http://localhost:8080',\n    apiEndpoints: {\n      message: 'http://localhost:8080/api/v1/message',\n    },\n  }}\n/>`} />
+              </div>
+
+              {/* Request body */}
+              <Tip color="blue" icon="📦" title="POST /message request body">
+                <code className="block font-mono text-xs mt-1 whitespace-pre-wrap">{`{\n  "conversationId": "abc-123",\n  "message": "I want to know about the pro plan",\n  "reset": false,\n  "inputParams": {}\n}`}</code>
+              </Tip>
             </DocCardBody>
           </DocCard>
 

@@ -115,23 +115,98 @@ const FORM_SUBMIT_RESPONSES = [
   (name, country, dob) => `📋 **Information Received!**\n\nHi **${name}**, we've got everything we need!\n\n| Field | Value |\n|---|---|\n| Country | ${country} |\n| Date of Birth | ${dob} |\n| Terms | Accepted |\n\nYour account is now active. Welcome! 🚀`,
 ];
 
-export function matchResponse(input) {
-  const norm  = normalise(input);
-  const inTok = tokenise(input);
+/**
+ * Known enrichment prefixes and the handlers they map to.
+ * A prefix set via config.messageEnrichment routes the message to a specific
+ * handler before the normal matching stages run — invisible to the user, but
+ * visible in the backend and the audit trail.
+ *
+ * text mode  — prefix is embedded in the message string ("/faq tell me about pro")
+ *              and stripped before Stage 1+ matching runs.
+ * json mode  — prefix arrives in options.prefix, message is already clean.
+ *
+ * Handlers receive (cleanInput, options, enrichMeta) where enrichMeta is pre-built
+ * by matchResponse using the fully-resolved activePrefix (covers both text and json mode).
+ */
+const ENRICHMENT_PREFIX_HANDLERS = {
+  '/faq':   (cleanInput, _options, enrichMeta) => buildFaqResponsePayloadFromFakeChat(cleanInput, 3, enrichMeta),
+  '/order': (cleanInput) => {
+    const orderPairs = pairs.filter((p) => Array.isArray(p.tags) && p.tags.includes('order'));
+    const pick = orderPairs[Math.floor(Math.random() * orderPairs.length)];
+    return pick ? pick.agent : null;
+  },
+  '/product': (cleanInput) => {
+    const productPairs = pairs.filter((p) => Array.isArray(p.tags) && p.tags.includes('product'));
+    const pick = productPairs[Math.floor(Math.random() * productPairs.length)];
+    return pick ? pick.agent : null;
+  },
+  '/flight': (cleanInput) => {
+    const flightPairs = pairs.filter((p) => Array.isArray(p.tags) && p.tags.includes('flight'));
+    const pick = flightPairs[Math.floor(Math.random() * flightPairs.length)];
+    return pick ? pick.agent : null;
+  },
+};
+
+/**
+ * Match a user message to the best response in fake-chat.json.
+ *
+ * @param   {string} input                    Raw user message (or clean text from JSON enrichment)
+ * @param   {{ prefix?: string, postfix?: string, inputParams?: object }} [options]
+ *          Enrichment context forwarded from the API route:
+ *            prefix  — the enrichment prefix (e.g. "/faq"), already stripped from `input`
+ *                      in json mode; still embedded in `input` in text mode.
+ *            postfix — the enrichment postfix (informational only, not used for routing)
+ * @returns {string|object}  Agent response (string or renderer-payload object)
+ */
+export function matchResponse(input, options = {}) {
+  // ── Resolve enrichment prefix ─────────────────────────────────────────────
+  // JSON mode: prefix arrives cleanly in options.prefix, input is already stripped.
+  // Text mode: prefix is embedded at the start of input ("/<cmd> <text>").
+  //            We detect it, strip it, and use the clean text for matching.
+  let cleanInput  = input;
+  let activePrefix = (options.prefix ?? '').trim().toLowerCase();
+
+  if (!activePrefix) {
+    // Text mode: auto-detect /word prefix at start of input
+    const prefixMatch = input.match(/^(\/[a-z]+)\s+/i);
+    if (prefixMatch) {
+      activePrefix = prefixMatch[1].toLowerCase();
+      cleanInput   = input.slice(prefixMatch[0].length).trim();
+    }
+  }
+
+  // ── Stage 0-pre: Enrichment prefix routing ────────────────────────────────
+  if (activePrefix && ENRICHMENT_PREFIX_HANDLERS[activePrefix]) {
+    // Build enrichMeta here — activePrefix is fully resolved for both text and json mode.
+    // In text mode options.prefix is empty (prefix was baked into the message string),
+    // so we use activePrefix directly. In json mode options.prefix already has it.
+    const isJsonMode = options?.inputParams?.userText !== undefined;
+    const resolvedPostfix = (options?.postfix ?? '').trim();
+    const enrichMeta = (activePrefix || resolvedPostfix)
+      ? { mode: isJsonMode ? 'json' : 'text', prefix: activePrefix, postfix: resolvedPostfix }
+      : null;
+    const result = ENRICHMENT_PREFIX_HANDLERS[activePrefix](cleanInput, options, enrichMeta);
+    if (result != null) return result;
+  }
+
+  // All subsequent stages use cleanInput (prefix stripped in text mode,
+  // already clean in json mode, unchanged when no enrichment is set).
+  const effectiveInput = cleanInput;
+  const norm  = normalise(effectiveInput);
+  const inTok = tokenise(effectiveInput);
 
   // ── Stage 0: Buy Now prefix handler (dynamic cart submissions) ───────────
   const BUY_PREFIX = 'buy now cart items:';
   if (norm.startsWith(normalise(BUY_PREFIX))) {
-    const rawItems = input.slice(input.toLowerCase().indexOf(':') + 1).trim();
+    const rawItems = effectiveInput.slice(effectiveInput.toLowerCase().indexOf(':') + 1).trim();
     const items = rawItems || 'your selected items';
     const pick = BUY_NOW_RESPONSES[Math.floor(Math.random() * BUY_NOW_RESPONSES.length)];
     return pick(items);
   }
 
   // ── Stage 0b: Book flight handler (dynamic flight booking) ───────────────
-  // Matches "Book Delta Air Lines at $249" / "book united airlines at $289"
   const BOOK_FLIGHT_RE = /^book (.+?) at (\$[\d,]+)$/i;
-  const bfMatch = input.trim().match(BOOK_FLIGHT_RE);
+  const bfMatch = effectiveInput.trim().match(BOOK_FLIGHT_RE);
   if (bfMatch) {
     const [, carrier, price] = bfMatch;
     const pick = BOOK_FLIGHT_RESPONSES[Math.floor(Math.random() * BOOK_FLIGHT_RESPONSES.length)];
@@ -139,10 +214,9 @@ export function matchResponse(input) {
   }
 
   // ── Stage 0c: CompleteForm submit handler ─────────────────────────────────
-  // Matches "Form Submitted: Jane Doe, United States, Female, Terms Accepted, photo.jpg, DOB: 1990-01-15"
   const FORM_PREFIX = 'form submitted:';
   if (norm.startsWith(normalise(FORM_PREFIX))) {
-    const details = input.slice(input.toLowerCase().indexOf(':') + 1).trim();
+    const details = effectiveInput.slice(effectiveInput.toLowerCase().indexOf(':') + 1).trim();
     const parts = details.split(',').map((s) => s.trim());
     const name    = parts[0] || 'there';
     const country = parts[1] || 'your country';
@@ -152,36 +226,19 @@ export function matchResponse(input) {
   }
 
   // ── Stage 0d: FAQ / knowledge-base handler ─────────────────────────────────
-  // Intercepts help / how-to / what-is style questions and returns a
-  // FAQResponse renderer payload so the custom renderer card is shown.
   const FAQ_TRIGGERS = [
-    /\bhow\s+to\b/i,
-    /\bwhat\s+is\b/i,
-    /\bwhat\s+are\b/i,
-    /\bhow\s+do\s+i\b/i,
-    /\bcan\s+i\b/i,
-    /\bwhere\s+(can|do|is)\b/i,
-    /\breset\b/i,
-    /\bforgot\b/i,
-    /\bpassword\b/i,
-    /\bhelp\b/i,
-    /\bguide\b/i,
-    /\btutorial\b/i,
-    /\bexplain\b/i,
+    /\bhow\s+to\b/i, /\bwhat\s+is\b/i, /\bwhat\s+are\b/i,
+    /\bhow\s+do\s+i\b/i, /\bcan\s+i\b/i, /\bwhere\s+(can|do|is)\b/i,
+    /\breset\b/i, /\bforgot\b/i, /\bpassword\b/i,
+    /\bhelp\b/i, /\bguide\b/i, /\btutorial\b/i, /\bexplain\b/i,
     /\bwhy\s+(is|does|do|can|should)\b/i,
   ];
-  // Don't hijack existing Stage-0 renderer triggers
-  const NOT_FAQ = [
-    /^buy now cart items:/i,
-    /^book .+ at \$/i,
-    /^form submitted:/i,
-  ];
-  const looksFaq   = FAQ_TRIGGERS.some((re) => re.test(input));
-  const notHijack  = NOT_FAQ.every((re) => !re.test(input));
+  const NOT_FAQ = [/^buy now cart items:/i, /^book .+ at \$/i, /^form submitted:/i];
+  const looksFaq  = FAQ_TRIGGERS.some((re) => re.test(effectiveInput));
+  const notHijack = NOT_FAQ.every((re) => !re.test(effectiveInput));
   if (looksFaq && notHijack) {
-    return buildFaqResponsePayloadFromFakeChat(input, 3);
+    return buildFaqResponsePayloadFromFakeChat(effectiveInput, 3);
   }
-
   // ── Stage 1: Direct exact match ──────────────────────────────────────────
   for (const pair of pairs) {
     if (normalise(pair.user) === norm) return pair.agent;

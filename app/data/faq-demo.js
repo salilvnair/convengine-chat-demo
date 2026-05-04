@@ -100,7 +100,7 @@ function withSemanticScore(items, userQuery) {
     .sort((a, b) => b.score - a.score);
 }
 
-export function buildFaqResponsePayloadFromFakeChat(userQuery = 'how to reset password', maxMatches = 3) {
+export function buildFaqResponsePayloadFromFakeChat(userQuery = 'how to reset password', maxMatches = 3, enrichMeta = null) {
   const base = dedupeFaqItems(buildFaqCandidates());
   const ranked = withSemanticScore(base, userQuery);
   const matchedFaqs = ranked.slice(0, Math.max(1, maxMatches));
@@ -114,6 +114,7 @@ export function buildFaqResponsePayloadFromFakeChat(userQuery = 'how to reset pa
     confidence: top?.score ?? 0.55,
     matchedFaqs,
     caption: `Simulated semantic match from fake-chat.json • ${new Date().toLocaleDateString()}`,
+    ...(enrichMeta ? { enrichment: enrichMeta } : {}),
   };
 }
 

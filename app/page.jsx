@@ -311,6 +311,7 @@ function QuickstartApp({ onBack }) {
     composerBg:            { light: '', dark: '' },
     iconColor:             { light: '', dark: '' },
     previewDark:           false,
+    messageEnrichment:     { mode: 'none', prefix: '', postfix: '', props: {} },
   });
   const [iconComponents, setIconComponents] = useState({});
   const chatActionsRef = useRef(null);
@@ -369,6 +370,7 @@ function QuickstartApp({ onBack }) {
             composerShape:         chatSettings.composerShape,
             icons:                 iconComponents,
             renderers:             interactiveRenderers,
+            messageEnrichment:     chatSettings.messageEnrichment?.mode !== 'none' ? chatSettings.messageEnrichment : undefined,
           }}
           theme={{
             'color-accent': chatSettings.accentColor,

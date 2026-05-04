@@ -537,8 +537,10 @@ const FAQ_BADGE_PALETTE = [
 
 function FAQResponseComponent({ payload }) {
   const answer = payload?.answer;
+  const userQuery = payload?.userQuery;
   const confidence = typeof payload?.confidence === 'number' ? payload.confidence : null;
   const matchedFaqs = Array.isArray(payload?.matchedFaqs) ? payload.matchedFaqs : [];
+  const enrichment = payload?.enrichment ?? null;
 
   return (
     <div className="ce-interactive-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -569,9 +571,56 @@ function FAQResponseComponent({ payload }) {
         )}
       </div>
 
-      {/* answer only */}
+      {/* answer */}
       {answer && (
         <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.5, color: 'var(--ce-fg)' }}>{answer}</p>
+      )}
+
+      {/* query asked */}
+      {userQuery && (
+        <div style={{
+          borderTop: '1px solid var(--ce-border, #e2e8f0)',
+          paddingTop: 8,
+          display: 'flex', flexDirection: 'column', gap: 3,
+        }}>
+          <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ce-fg-muted, #94a3b8)' }}>
+            Query asked
+          </span>
+          <span style={{ fontSize: '0.78rem', fontStyle: 'italic', color: 'var(--ce-fg, #334155)' }}>
+            &ldquo;{userQuery}&rdquo;
+          </span>
+        </div>
+      )}
+
+      {/* enrichment metadata — only shown when prefix/postfix were active */}
+      {enrichment && (
+        <div style={{
+          background: 'var(--ce-surface-2, #f8fafc)',
+          border: '1px dashed var(--ce-border, #e2e8f0)',
+          borderRadius: 6, padding: '7px 10px',
+          display: 'flex', flexDirection: 'column', gap: 5,
+        }}>
+          <span style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#f59e0b' }}>
+            Enrichment · backend only
+          </span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {enrichment.mode && (
+              <span style={{ fontSize: '0.65rem', fontWeight: 600, background: '#ede9fe', color: '#5b21b6', border: '1px solid #ddd6fe', borderRadius: 999, padding: '1px 7px' }}>
+                mode: {enrichment.mode}
+              </span>
+            )}
+            {enrichment.prefix && (
+              <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 7px' }}>
+                prefix: &quot;{enrichment.prefix}&quot;
+              </span>
+            )}
+            {enrichment.postfix && (
+              <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 7px' }}>
+                postfix: &quot;{enrichment.postfix}&quot;
+              </span>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
