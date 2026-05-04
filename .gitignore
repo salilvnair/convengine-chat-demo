@@ -8,6 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 out
 
+# Env files
+.env
+!.env.example
+
 node_modules
 dist
 dist-ssr
