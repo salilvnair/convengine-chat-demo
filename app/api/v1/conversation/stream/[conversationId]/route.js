@@ -13,9 +13,6 @@
  */
 import { registerSseController, unregisterSseController } from '../../sse-bus.js';
 
-// Force dynamic so Next.js never caches this response
-export const dynamic = 'force-dynamic';
-
 export async function GET(request, { params }) {
   const { conversationId } = await params;
 
