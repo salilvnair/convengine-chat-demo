@@ -541,7 +541,7 @@ http.createServer((req, res) => {
                 <PropRow id="config-showBubbleTime"      prop="showBubbleTime"      type='boolean' defaultVal='false'   description='Show a formatted time caption below every message bubble (user + assistant). Format is controlled by bubbleTimeFormat.' />
                 <PropRow prop="bubbleTimeFormat"    type='string'  defaultVal="'h:mm A'" description="Time format string. Tokens: h hh H HH mm ss A a. Examples: 'h:mm A' → 12:14 PM, 'HH:mm' → 14:14, 'h:mm:ss A' → 12:14:05 PM." />
                 <PropRow id="config-showDateSeparators" prop="showDateSeparators" type='boolean' defaultVal='false'   description="Show  sticky date separator chips between messages from different days. The chip sticks at the top of the scroll container while scrolling through the same day." />
-                <PropRow prop="dateSeparatorFormat" type='string'  defaultVal="'auto'"  description="Date format for the separator chip. Use 'auto' for Today/Yesterday/ddd, MMM D (WhatsApp style). Tokens: YYYY YY MMMM MMM MM M dddd ddd DD D." />
+                <PropRow prop="dateSeparatorFormat" type='string'  defaultVal="'auto'"  description="Date format for the separator chip. Use 'auto' for Today/Yesterday/ddd, MMM D. Tokens: YYYY YY MMMM MMM MM M dddd ddd DD D." />
                 <PropRow prop="timeLabelBg"          type='string | { light, dark }' defaultVal='transparent' description='Background of the time caption. CSS var: --ce-time-label-bg.' />
                 <PropRow prop="timeLabelColor"       type='string | { light, dark }' defaultVal='text-secondary' description='Text color of the time caption. CSS var: --ce-time-label-color.' />
                 <PropRow prop="timeLabelBorderColor" type='string | { light, dark }' defaultVal='transparent' description='Border color of the time caption. CSS var: --ce-time-label-border.' />
@@ -570,7 +570,7 @@ http.createServer((req, res) => {
                 When <code className="font-mono text-xs bg-teal-100 px-1 rounded">dateSeparatorFormat</code> is set to{' '}
                 <code className="font-mono text-xs bg-teal-100 px-1 rounded">'auto'</code>, the chip shows{' '}
                 <strong>"Today"</strong> for the current day, <strong>"Yesterday"</strong> for the previous day, and{' '}
-                <strong>"ddd, MMM D"</strong> (e.g. "Thu, Apr 23") for older dates — exactly like WhatsApp.
+                <strong>"ddd, MMM D"</strong> (e.g. "Thu, Apr 23") for older dates.
                 The chip uses CSS <code className="font-mono text-xs bg-teal-100 px-1 rounded">position: sticky</code> inside the scroll container,
                 so it stays pinned at the top while you scroll through the day's messages and is pushed away when the next day's chip arrives.
                 No JavaScript scroll listeners needed.
