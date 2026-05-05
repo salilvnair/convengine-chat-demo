@@ -535,46 +535,255 @@ http.createServer((req, res) => {
 
           {/* ── Timestamps & Dates ── */}
           <DocCard id="timestamps">
-            <SectionHeader gradient="bg-gradient-to-r from-teal-500 to-cyan-500" icon="🕐" title="Timestamps &amp; Dates" subtitle="Time captions below bubbles and  sticky date chips between day groups" />
+            <SectionHeader gradient="bg-gradient-to-r from-teal-500 to-cyan-500" icon="🕐" title="Timestamps &amp; Dates" subtitle="Time captions below bubbles and sticky date chips between day groups" />
             <DocCardBody>
+
+              <Tip color="teal" icon="ℹ️" title="How sentAt is stamped">
+                ConvEngine automatically records a <code className="font-mono text-xs bg-teal-100 px-1 rounded">sentAt</code> Unix-ms timestamp
+                on every message the moment it enters the thread — both user messages (on send) and assistant messages (on arrival).
+                You never need to set it manually; enabling <code className="font-mono text-xs bg-teal-100 px-1 rounded">showBubbleTime</code> or{' '}
+                <code className="font-mono text-xs bg-teal-100 px-1 rounded">showDateSeparators</code> is all that&apos;s required.
+              </Tip>
+
+              {/* ── Bubble time caption ── */}
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-2">Bubble time caption</p>
               <PropsTable>
-                <PropRow id="config-showBubbleTime"      prop="showBubbleTime"      type='boolean' defaultVal='false'   description='Show a formatted time caption below every message bubble (user + assistant). Format is controlled by bubbleTimeFormat.' />
-                <PropRow prop="bubbleTimeFormat"    type='string'  defaultVal="'h:mm A'" description="Time format string. Tokens: h hh H HH mm ss A a. Examples: 'h:mm A' → 12:14 PM, 'HH:mm' → 14:14, 'h:mm:ss A' → 12:14:05 PM." />
-                <PropRow id="config-showDateSeparators" prop="showDateSeparators" type='boolean' defaultVal='false'   description="Show  sticky date separator chips between messages from different days. The chip sticks at the top of the scroll container while scrolling through the same day." />
-                <PropRow prop="dateSeparatorFormat" type='string'  defaultVal="'auto'"  description="Date format for the separator chip. Use 'auto' for Today/Yesterday/ddd, MMM D. Tokens: YYYY YY MMMM MMM MM M dddd ddd DD D." />
-                <PropRow prop="timeLabelBg"          type='string | { light, dark }' defaultVal='transparent' description='Background of the time caption. CSS var: --ce-time-label-bg.' />
-                <PropRow prop="timeLabelColor"       type='string | { light, dark }' defaultVal='text-secondary' description='Text color of the time caption. CSS var: --ce-time-label-color.' />
-                <PropRow prop="timeLabelBorderColor" type='string | { light, dark }' defaultVal='transparent' description='Border color of the time caption. CSS var: --ce-time-label-border.' />
-                <PropRow prop="dateLabelBg"          type='string | { light, dark }' defaultVal='rgba(0,0,0,0.05)' description='Background of the date separator chip. CSS var: --ce-date-chip-bg.' />
-                <PropRow prop="dateLabelColor"       type='string | { light, dark }' defaultVal='text-secondary' description='Text color of the date separator chip. CSS var: --ce-date-chip-color.' />
-                <PropRow prop="dateLabelBorderColor" type='string | { light, dark }' defaultVal='transparent' description='Border color of the date separator chip. CSS var: --ce-date-chip-border.' />
+                <PropRow prop="showBubbleTime"   type="boolean" defaultVal="false"    description="Show a formatted time caption below every message bubble (both user and assistant). The caption is indented to align with the bubble edge, not the avatar." />
+                <PropRow prop="bubbleTimeFormat" type="string"  defaultVal="'h:mm A'" description="Format string for the time caption. Built-in token-based formatter — no external library needed. See the token table below." />
+                <PropRow prop="timeLabelBg"          type="string | { light, dark }" defaultVal="transparent"    description="Background fill of the time caption text. Accepts any CSS color or a light/dark object. CSS var: --ce-time-label-bg." />
+                <PropRow prop="timeLabelColor"       type="string | { light, dark }" defaultVal="text-secondary" description="Text color of the time caption. CSS var: --ce-time-label-color." />
+                <PropRow prop="timeLabelBorderColor" type="string | { light, dark }" defaultVal="transparent"    description="Border color around the time caption. CSS var: --ce-time-label-border." />
               </PropsTable>
 
+              {/* ── Date separator chip ── */}
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">Date separator chip</p>
+              <PropsTable>
+                <PropRow prop="showDateSeparators"  type="boolean" defaultVal="false"  description="Insert a sticky date chip between messages from different calendar days. The chip uses CSS position: sticky so it stays pinned at the top of the scroll container as you scroll through a day's messages." />
+                <PropRow prop="dateSeparatorFormat" type="string"  defaultVal="'auto'" description="Format string for the date chip label. Use 'auto' for smart Today/Yesterday/ddd, MMM D output, or supply any token string. See the token table below." />
+                <PropRow prop="dateSeparatorShape"  type="'pill' | 'rect'" defaultVal="'pill'" description="Shape of the date separator chip. 'pill' gives a fully-rounded capsule (border-radius: 999px). 'rect' gives a subtle rectangle (border-radius: 6px) — useful when matching a squared-off UI." />
+                <PropRow prop="dateLabelBg"          type="string | { light, dark }" defaultVal="accent-light"   description="Background of the date chip. Defaults to a tint of the accent color. CSS var: --ce-date-chip-bg." />
+                <PropRow prop="dateLabelColor"       type="string | { light, dark }" defaultVal="accent"         description="Text color of the date chip. Defaults to the accent color. CSS var: --ce-date-chip-color." />
+                <PropRow prop="dateLabelBorderColor" type="string | { light, dark }" defaultVal="transparent"    description="Border color of the date chip. CSS var: --ce-date-chip-border." />
+              </PropsTable>
+
+              {/* ── Format token reference ── */}
+              <div className="mt-4 space-y-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Format token reference</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                  {/* Time tokens */}
+                  <div className="rounded-xl border border-teal-100 overflow-hidden">
+                    <div className="bg-teal-50 px-4 py-2 text-[11px] font-bold text-teal-700 uppercase tracking-wider">Time tokens — bubbleTimeFormat</div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 text-xs text-slate-400 uppercase tracking-wider">
+                          <th className="px-3 py-2 text-left font-bold">Token</th>
+                          <th className="px-3 py-2 text-left font-bold">Meaning</th>
+                          <th className="px-3 py-2 text-left font-bold">Example</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 bg-white text-xs">
+                        {[
+                          ['h',  '12-hour, no padding',   '2'],
+                          ['hh', '12-hour, zero-padded',  '02'],
+                          ['H',  '24-hour, no padding',   '14'],
+                          ['HH', '24-hour, zero-padded',  '14'],
+                          ['mm', 'Minutes, zero-padded',  '05'],
+                          ['ss', 'Seconds, zero-padded',  '09'],
+                          ['A',  'AM / PM uppercase',     'PM'],
+                          ['a',  'am / pm lowercase',     'pm'],
+                        ].map(([tok, meaning, ex]) => (
+                          <tr key={tok} className="hover:bg-teal-50/30">
+                            <td className="px-3 py-2"><code className="font-mono text-teal-700 font-semibold">{tok}</code></td>
+                            <td className="px-3 py-2 text-slate-600">{meaning}</td>
+                            <td className="px-3 py-2"><code className="font-mono text-slate-500">{ex}</code></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Date tokens */}
+                  <div className="rounded-xl border border-cyan-100 overflow-hidden">
+                    <div className="bg-cyan-50 px-4 py-2 text-[11px] font-bold text-cyan-700 uppercase tracking-wider">Date tokens — dateSeparatorFormat</div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 text-xs text-slate-400 uppercase tracking-wider">
+                          <th className="px-3 py-2 text-left font-bold">Token</th>
+                          <th className="px-3 py-2 text-left font-bold">Meaning</th>
+                          <th className="px-3 py-2 text-left font-bold">Example</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 bg-white text-xs">
+                        {[
+                          ['YYYY', 'Full 4-digit year',    '2026'],
+                          ['YY',   '2-digit year',         '26'],
+                          ['MMMM', 'Full month name',      'April'],
+                          ['MMM',  'Short month name',     'Apr'],
+                          ['MM',   'Month, zero-padded',   '04'],
+                          ['M',    'Month number',         '4'],
+                          ['dddd', 'Full weekday name',    'Thursday'],
+                          ['ddd',  'Short weekday name',   'Thu'],
+                          ['DD',   'Day, zero-padded',     '05'],
+                          ['D',    'Day number',           '5'],
+                          ["'auto'", 'Smart label',        'Today / Yesterday / Thu, Apr 23'],
+                        ].map(([tok, meaning, ex]) => (
+                          <tr key={tok} className="hover:bg-cyan-50/30">
+                            <td className="px-3 py-2"><code className="font-mono text-cyan-700 font-semibold">{tok}</code></td>
+                            <td className="px-3 py-2 text-slate-600">{meaning}</td>
+                            <td className="px-3 py-2"><code className="font-mono text-slate-500">{ex}</code></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Common format recipe examples */}
+                <div className="rounded-xl border border-slate-100 overflow-hidden">
+                  <div className="bg-slate-50 px-4 py-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Common format recipes</div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-white text-xs text-slate-400 uppercase tracking-wider">
+                        <th className="px-4 py-2 text-left font-bold">Format string</th>
+                        <th className="px-4 py-2 text-left font-bold">Output</th>
+                        <th className="px-4 py-2 text-left font-bold">Style</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 bg-white text-xs">
+                      {[
+                        ["'h:mm A'",        '2:14 PM',               '12-hour (default)'],
+                        ["'h:mm:ss A'",     '2:14:05 PM',            '12-hour with seconds'],
+                        ["'hh:mm A'",       '02:14 PM',              '12-hour zero-padded'],
+                        ["'HH:mm'",         '14:14',                 '24-hour / EU style'],
+                        ["'H:mm'",          '14:14',                 '24-hour no padding'],
+                        ["'HH:mm:ss'",      '14:14:05',              '24-hour with seconds'],
+                        ["'auto'",          'Today / Yesterday / Thu, Apr 23', 'Smart date (default for dates)'],
+                        ["'ddd, MMM D'",    'Thu, Apr 23',           'Day + month explicit'],
+                        ["'MMM D, YYYY'",   'Apr 23, 2026',          'Long date with year'],
+                        ["'DD/MM/YYYY'",    '23/04/2026',            'EU numeric date'],
+                        ["'YYYY-MM-DD'",    '2026-04-23',            'ISO 8601'],
+                        ["'dddd, MMMM D'",  'Thursday, April 23',    'Full day and month'],
+                      ].map(([fmt, out, style]) => (
+                        <tr key={fmt} className="hover:bg-slate-50">
+                          <td className="px-4 py-2"><code className="font-mono text-indigo-600 font-semibold">{fmt}</code></td>
+                          <td className="px-4 py-2"><code className="font-mono text-slate-700">{out}</code></td>
+                          <td className="px-4 py-2 text-slate-500">{style}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* ── CSS variable reference ── */}
+              <div className="mt-4 space-y-2">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">CSS variable reference</p>
+                <div className="overflow-x-auto rounded-xl border border-slate-100">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100 text-xs uppercase text-slate-400 tracking-wider">
+                        <th className="px-4 py-3 text-left font-bold">config prop</th>
+                        <th className="px-4 py-3 text-left font-bold">CSS variable</th>
+                        <th className="px-4 py-3 text-left font-bold">Default</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 bg-white">
+                      {[
+                        ['timeLabelBg',          '--ce-time-label-bg',     'transparent'],
+                        ['timeLabelColor',        '--ce-time-label-color',  'var(--ce-text-secondary)'],
+                        ['timeLabelBorderColor',  '--ce-time-label-border', 'transparent'],
+                        ['dateLabelBg',           '--ce-date-chip-bg',      'var(--ce-color-accent-light)'],
+                        ['dateLabelColor',        '--ce-date-chip-color',   'var(--ce-color-accent)'],
+                        ['dateLabelBorderColor',  '--ce-date-chip-border',  'transparent'],
+                      ].map(([prop, cssVar, def]) => (
+                        <tr key={prop} className="hover:bg-teal-50/30">
+                          <td className="px-4 py-2.5"><code className="font-mono text-xs text-indigo-600 font-semibold">{prop}</code></td>
+                          <td className="px-4 py-2.5"><code className="font-mono text-xs text-pink-600">{cssVar}</code></td>
+                          <td className="px-4 py-2.5 text-xs text-slate-500">{def}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* ── Code examples ── */}
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-4">Example — 12-hour time + smart date separators</p>
               <CodeBlock lang="jsx" code={`<ConvEngineChat
   config={{
     apiHost: 'http://localhost:8080',
 
     showBubbleTime:      true,
-    bubbleTimeFormat:    'h:mm A',       // 12:14 PM
+    bubbleTimeFormat:    'h:mm A',        // → 2:14 PM
 
     showDateSeparators:  true,
-    dateSeparatorFormat: 'auto',         // Today / Yesterday / Thu, Apr 23
+    dateSeparatorFormat: 'auto',          // → Today / Yesterday / Thu, Apr 23
+    dateSeparatorShape:  'pill',          // default — fully rounded capsule
 
-    // optional: custom chip colors
-    dateLabelBg:    { light: 'rgba(0,0,0,0.06)', dark: 'rgba(255,255,255,0.10)' },
-    dateLabelColor: { light: '#475569',           dark: '#94a3b8' },
+    // optional: neutral gray chip that works in both themes
+    dateLabelBg:    { light: 'rgba(0,0,0,0.06)',   dark: 'rgba(255,255,255,0.10)' },
+    dateLabelColor: { light: '#475569',             dark: '#94a3b8' },
   }}
 />`} />
 
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example — 24-hour time + explicit date format (EU style)</p>
+              <CodeBlock lang="jsx" code={`<ConvEngineChat
+  config={{
+    apiHost: 'http://localhost:8080',
+
+    showBubbleTime:      true,
+    bubbleTimeFormat:    'HH:mm',         // → 14:14
+
+    showDateSeparators:  true,
+    dateSeparatorFormat: 'DD/MM/YYYY',    // → 23/04/2026
+    dateSeparatorShape:  'rect',          // squared chip — matches a flat UI
+  }}
+/>`} />
+
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Example — time with seconds, full date label</p>
+              <CodeBlock lang="jsx" code={`<ConvEngineChat
+  config={{
+    apiHost: 'http://localhost:8080',
+
+    showBubbleTime:      true,
+    bubbleTimeFormat:    'h:mm:ss A',     // → 2:14:05 PM
+
+    showDateSeparators:  true,
+    dateSeparatorFormat: 'dddd, MMMM D',  // → Thursday, April 23
+    dateSeparatorShape:  'pill',
+
+    // match accent to bubble color for a cohesive look
+    dateLabelBg:    { light: 'rgba(99,102,241,0.10)', dark: 'rgba(99,102,241,0.20)' },
+    dateLabelColor: { light: '#6366f1',                dark: '#818cf8' },
+  }}
+/>`} />
+
+              {/* ── Tips ── */}
               <Tip color="teal" icon="💡" title="How 'auto' date format works">
-                When <code className="font-mono text-xs bg-teal-100 px-1 rounded">dateSeparatorFormat</code> is set to{' '}
-                <code className="font-mono text-xs bg-teal-100 px-1 rounded">'auto'</code>, the chip shows{' '}
-                <strong>"Today"</strong> for the current day, <strong>"Yesterday"</strong> for the previous day, and{' '}
-                <strong>"ddd, MMM D"</strong> (e.g. "Thu, Apr 23") for older dates.
-                The chip uses CSS <code className="font-mono text-xs bg-teal-100 px-1 rounded">position: sticky</code> inside the scroll container,
-                so it stays pinned at the top while you scroll through the day's messages and is pushed away when the next day's chip arrives.
-                No JavaScript scroll listeners needed.
+                When <code className="font-mono text-xs bg-teal-100 px-1 rounded">dateSeparatorFormat</code> is <code className="font-mono text-xs bg-teal-100 px-1 rounded">'auto'</code>,
+                the chip renders <strong>"Today"</strong> for the current calendar day, <strong>"Yesterday"</strong> for the previous day,
+                and falls back to <strong>"ddd, MMM D"</strong> (e.g. "Thu, Apr 23") for all older dates.
+                This matches the convention used by most messaging apps and requires zero configuration.
               </Tip>
+
+              <Tip color="cyan" icon="📌" title="Sticky date chips — no JS scroll listeners">
+                Date separator chips use CSS <code className="font-mono text-xs bg-cyan-100 px-1 rounded">position: sticky; top: 4px</code>
+                inside the <code className="font-mono text-xs bg-cyan-100 px-1 rounded">.ce-thread</code> scroll container.
+                Each chip stays pinned at the top of the viewport as you scroll through its day&apos;s messages,
+                then gets pushed upward when the next day&apos;s chip arrives.
+                No JavaScript scroll listeners or IntersectionObserver are involved.
+              </Tip>
+
+              <Tip color="blue" icon="🎨" title="Time caption alignment">
+                The <code className="font-mono text-xs bg-blue-100 px-1 rounded">.ce-bubble-time</code> caption is
+                indented by <code className="font-mono text-xs bg-blue-100 px-1 rounded">calc(--ce-avatar-size + 10px)</code>
+                so it aligns with the bubble edge rather than the avatar.
+                User captions are right-aligned; assistant captions are left-aligned.
+                Override <code className="font-mono text-xs bg-blue-100 px-1 rounded">timeLabelColor</code> / <code className="font-mono text-xs bg-blue-100 px-1 rounded">timeLabelBg</code> to
+                style it like a pill (add a background + border) or keep it as plain secondary text (default).
+              </Tip>
+
             </DocCardBody>
           </DocCard>
 
