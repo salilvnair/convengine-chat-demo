@@ -3,7 +3,7 @@ const isExport = process.env.NEXT_EXPORT === '1';
 const deployBasePath = process.env.NEXT_BASE_PATH || '';
 
 const nextConfig = {
-  transpilePackages: ['@salilvnair/convengine-chat'],
+  // transpilePackages: ['@salilvnair/convengine-chat'],
   ...(isExport && { output: 'export' }),
   // Only apply basePath/assetPrefix for static exports — not dev or regular builds,
   // because basePath would shift API routes and break the local mock API.
