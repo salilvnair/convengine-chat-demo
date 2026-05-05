@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CodeBlock }   from './ui/CodeBlock.jsx';
 import { buildFaqResponsePayloadFromFakeChat, FAQ_RESPONSE_CODE } from '../../../data/faq-demo.js';
+import { FAQ_ANSWER_RENDERER_PAYLOAD, FAQ_ANSWER_RENDERER_CODE } from '../../../data/faq-answer-renderer-demo.js';
 import { FLIGHT_DEMO_CODE, FLIGHT_DEMO_PAYLOAD }     from '../../../data/flight-demo.js';
 import { ORDER_TRACKER_DEMO_CODE, ORDER_TRACKER_DEMO_PAYLOAD }   from '../../../data/order-tracker-demo.js';
 import { PRODUCT_DEMO_CODE, PRODUCT_DEMO_PAYLOAD }   from '../../../data/product-demo.js';
@@ -63,6 +64,16 @@ const RENDERER_DEMOS = [
     actions: ['submit → form_submit (sends all field values)'],
     payload: COMPLETE_FORM_DEMO_PAYLOAD,
     code: COMPLETE_FORM_DEMO_CODE,
+  },
+  {
+    key: 'FaqAnswer',
+    icon: '💡',
+    title: 'FaqAnswer (custom renderer)',
+    desc: 'Custom renderer for FAQ answer payloads. Shows the answer text, a confidence % badge, and matched FAQ ID chips. Register via config.renderers — no longer built-in.',
+    color: 'indigo',
+    actions: [],
+    payload: FAQ_ANSWER_RENDERER_PAYLOAD,
+    code: FAQ_ANSWER_RENDERER_CODE,
   },
   {
     key: 'FAQResponse',

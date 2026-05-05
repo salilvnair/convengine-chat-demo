@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { matchResponse } from '../../../../data/fake-chat.js';
+import { emitSseEvent }  from '../sse-bus.js';
+import { VERBOSE_SEQUENCES } from '../../../../data/fake-stream.js';
 
 /**
  * POST /api/v1/conversation/message
@@ -31,7 +33,8 @@ import { matchResponse } from '../../../../data/fake-chat.js';
  * the clean text — invisible to the user but visible in the audit trail.
  */
 export async function POST(request) {
-  const { message, inputParams } = await request.json();
+  const body = await request.json();
+  const { message, inputParams, conversationId } = body;
 
   // JSON enrichment mode: inputParams.userText carries the original user text,
   // inputParams.prefix carries the routing prefix.
@@ -43,6 +46,23 @@ export async function POST(request) {
     postfix:     inputParams?.postfix ?? '',
     inputParams: inputParams ?? {},
   };
+
+  // ── Fire mock SSE VERBOSE events asynchronously ─────────────────────────
+  // If a stream subscriber is connected for this conversation, emit fake
+  // step events so the typing indicator shows live progress text.
+  if (conversationId) {
+    const sequence = VERBOSE_SEQUENCES[Math.floor(Math.random() * VERBOSE_SEQUENCES.length)];
+    // Don't await — fire and forget alongside the REST think-time below
+    (async () => {
+      for (const { text, delay: stepDelay } of sequence) {
+        await new Promise((r) => setTimeout(r, stepDelay));
+        emitSseEvent(conversationId, 'VERBOSE', { verbose: { text } });
+      }
+      // Give REST response a moment to land, then signal ENGINE_RETURN
+      await new Promise((r) => setTimeout(r, 200));
+      emitSseEvent(conversationId, 'ENGINE_RETURN', { stage: 'ENGINE_RETURN' });
+    })();
+  }
 
   // Simulate realistic think-time (300–900ms)
   const delay = 300 + Math.random() * 600;

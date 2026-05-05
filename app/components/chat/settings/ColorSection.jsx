@@ -10,6 +10,16 @@ export const COLOR_DEFAULTS = {
   panelBg:         { light: '#ffffff',  dark: '#212121' },
   composerBg:      { light: '#ffffff',  dark: '#2b2b2b' },
   iconColor:       { light: '#64748b',  dark: '#9ca3af' },
+  userIconBg:      { light: '',         dark: '' },  // derived: color-mix(accent, 14%, transparent)
+  userIconColor:   { light: '',         dark: '' },  // derived: accent color
+  agentIconBg:     { light: '',         dark: '' },  // derived: color-mix(agentBubbleBg, 14%, transparent)
+  agentIconColor:  { light: '',         dark: '' },  // derived: solid bubbleAgentBg (if set), else text-secondary
+  timeLabelBg:          { light: '',                   dark: '' },
+  timeLabelColor:       { light: '#64748b',             dark: '#9ca3af' },
+  timeLabelBorderColor: { light: '',                   dark: '' },
+  dateLabelBg:          { light: '',                   dark: '' },
+  dateLabelColor:       { light: '',                   dark: '' },
+  dateLabelBorderColor: { light: '',                   dark: '' },
 };
 
 export const COLOR_TILE_META = [
@@ -20,6 +30,16 @@ export const COLOR_TILE_META = [
   { key: 'panelBg',         label: 'Panel Bg',          hint: 'config.panelBg',         modes: ['panel','sidepanel'] },
   { key: 'composerBg',      label: 'Composer Bg',       hint: 'config.composerBg',      modes: ['panel','sidepanel','fullscreen'] },
   { key: 'iconColor',       label: 'Icon Color',        hint: 'config.iconColor',       modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'userIconBg',      label: 'User Icon Bg',      hint: 'config.userIconBg',      modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'userIconColor',   label: 'User Icon Color',   hint: 'config.userIconColor',   modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'agentIconBg',     label: 'Agent Icon Bg',     hint: 'config.agentIconBg',     modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'agentIconColor',     label: 'Agent Icon Color',   hint: 'config.agentIconColor',     modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'timeLabelBg',          label: 'Time Label Bg',     hint: 'config.timeLabelBg',          modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'timeLabelColor',       label: 'Time Label Color',  hint: 'config.timeLabelColor',       modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'timeLabelBorderColor', label: 'Time Label Border', hint: 'config.timeLabelBorderColor', modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'dateLabelBg',          label: 'Date Chip Bg',      hint: 'config.dateLabelBg',          modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'dateLabelColor',       label: 'Date Chip Color',   hint: 'config.dateLabelColor',       modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'dateLabelBorderColor', label: 'Date Chip Border',  hint: 'config.dateLabelBorderColor', modes: ['panel','sidepanel','fullscreen'] },
 ];
 
 export function ColorVariantRow({ isDarkMode, value, defaultVal, onChange }) {

@@ -37,35 +37,85 @@ function buildEnrichmentSnippet(enrich) {
 }
 
 function buildGeneratedCode(settings, iconSvgs) {
-  const m     = settings.chatMode;
-  const mode  = m === 'fullscreen' ? 'fullscreen' : m.startsWith('sidepanel') ? 'sidepanel' : 'panel';
+  const m    = settings.chatMode;
+  const mode = m === 'fullscreen' ? 'fullscreen' : m.startsWith('sidepanel') ? 'sidepanel' : 'panel';
   const align = m.startsWith('sidepanel') ? `\n  align="${m === 'sidepanel-left' ? 'left' : 'right'}"` : '';
-  const extras = [
-    settings.title       !== 'ConvEngine Assistant'                        ? `    title: "${settings.title}",` : null,
+
+  const COLOR_KEYS = [
+    'bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText',
+    'panelBg','composerBg','iconColor',
+    'userIconBg','userIconColor','agentIconBg','agentIconColor',
+    'timeLabelBg','timeLabelColor','timeLabelBorderColor',
+    'dateLabelBg','dateLabelColor','dateLabelBorderColor',
+  ];
+
+  const lines = [
+    `    apiHost: "http://localhost:8080",`,
+    `    showFeedback: ${settings.showFeedback},`,
+    `    showAudit: ${settings.showAudit},`,
+    `    showEngineStatus: ${settings.showEngineStatus ?? true},`,
+    `    showDarkModeLightMode: ${settings.showDarkModeLightMode},`,
+    settings.title       !== 'ConvEngine Assistant'                           ? `    title: "${settings.title}",`       : null,
     settings.subtitle    !== "Ask me anything \u2014 I'll do my best to help." ? `    subtitle: "${settings.subtitle}",` : null,
-    settings.placeholder !== 'Ask ConvEngine\u2026'                        ? `    placeholder: "${settings.placeholder}",` : null,
-    !settings.showHeaderDot       ? '    showHeaderDot: false,'       : null,
-    !settings.showLandingAvatar   ? '    showLandingAvatar: false,'   : null,
-    !settings.showLandingSubtitle ? '    showLandingSubtitle: false,' : null,
-    !settings.showNewChat         ? '    showNewChat: false,'         : null,
-    !settings.showLayoutPicker    ? '    showLayoutPicker: false,'    : null,
-    !settings.showMaximize        ? '    showMaximize: false,'        : null,
-    !settings.showMinimize        ? '    showMinimize: false,'        : null,
-    settings.composerShape === 'rect' ? `    composerShape: 'rect',` : null,
-    ...(['bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText','panelBg','composerBg','iconColor'].map((key) => {
+    settings.placeholder !== 'Ask ConvEngine\u2026'                           ? `    placeholder: "${settings.placeholder}",` : null,
+    !settings.showHeaderDot       ? `    showHeaderDot: false,`       : null,
+    !settings.showLandingAvatar   ? `    showLandingAvatar: false,`   : null,
+    !settings.showLandingSubtitle ? `    showLandingSubtitle: false,` : null,
+    !settings.showNewChat         ? `    showNewChat: false,`         : null,
+    !settings.showLayoutPicker    ? `    showLayoutPicker: false,`    : null,
+    !settings.showMaximize        ? `    showMaximize: false,`        : null,
+    !settings.showMinimize        ? `    showMinimize: false,`        : null,
+    settings.composerShape === 'rect' ? `    composerShape: 'rect',`  : null,
+    // Time & Date
+    settings.showBubbleTime   ? `    showBubbleTime: true,`    : null,
+    (settings.showBubbleTime && settings.bubbleTimeFormat && settings.bubbleTimeFormat !== 'h:mm A')
+      ? `    bubbleTimeFormat: "${settings.bubbleTimeFormat}",` : null,
+    settings.showDateSeparators ? `    showDateSeparators: true,` : null,
+    (settings.showDateSeparators && settings.dateSeparatorFormat && settings.dateSeparatorFormat !== 'auto')
+      ? `    dateSeparatorFormat: "${settings.dateSeparatorFormat}",` : null,
+    (settings.showDateSeparators && settings.dateSeparatorShape && settings.dateSeparatorShape !== 'round')
+      ? `    dateSeparatorShape: "${settings.dateSeparatorShape}",` : null,
+    // Colors
+    ...COLOR_KEYS.map((key) => {
       const v = settings[key];
       const l = v?.light?.trim(); const d = v?.dark?.trim();
       if (!l && !d) return null;
       const ser = (l && d) ? `{ light: "${l}", dark: "${d}" }` : l ? `"${l}"` : `{ dark: "${d}" }`;
       return `    ${key}: ${ser},`;
-    })),
-  ].filter(Boolean).join('\n');
+    }),
+  ].filter(Boolean);
+
+  // Icons
   const changedIcons = Object.keys(ICON_META).filter(k => iconSvgs[k] !== DEFAULT_ICON_SVGS[k]);
-  const iconsSnippet = changedIcons.length
-    ? `\n    icons: {\n${changedIcons.map(k => `      // custom ${k} \u2014 replace with your React component\n      ${k}: My${k},`).join('\n')}\n    },`
-    : '';
+  if (changedIcons.length) {
+    lines.push(`    icons: {`);
+    changedIcons.forEach(k => {
+      lines.push(`      // custom ${k} \u2014 replace with your React component`);
+      lines.push(`      ${k}: My${k},`);
+    });
+    lines.push(`    },`);
+  }
+
+  // Enrichment
   const enrichSnippet = buildEnrichmentSnippet(settings.messageEnrichment);
-  return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n    apiHost: "http://localhost:8080",\n    showFeedback: ${settings.showFeedback},\n    showAudit: ${settings.showAudit},\n    showEngineStatus: ${settings.showEngineStatus ?? true},\n    showDarkModeLightMode: ${settings.showDarkModeLightMode},${extras ? '\n' + extras : ''}${enrichSnippet ? '\n' + enrichSnippet : ''}${iconsSnippet}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
+  if (enrichSnippet) lines.push(enrichSnippet);
+
+  // Stream
+  if (settings.streamEnabled)       lines.push(`    stream: { enabled: true, transport: "${settings.streamTransport ?? 'sse'}" },`);
+  if (settings.showTransportBadge)  lines.push(`    showTransportBadge: true,`);
+
+  // Debug flags (only when non-default)
+  if (settings.debugShowVerbose)          lines.push(`    debugShowVerbose: true,`);
+  if (settings.debugShowPayload)          lines.push(`    debugShowPayload: true,`);
+  if (settings.debugShowRenderer)         lines.push(`    debugShowRenderer: true,`);
+  if (settings.debugShowTimestamps)       lines.push(`    debugShowTimestamps: true,`);
+  if (settings.debugShowMessageId)        lines.push(`    debugShowMessageId: true,`);
+  if ((settings.debugSimulateDelay ?? 0) > 0) lines.push(`    debugSimulateDelay: ${settings.debugSimulateDelay},`);
+  if (settings.debugSimulateError)        lines.push(`    debugSimulateError: true,`);
+  if (settings.debugHighlightRenderers)   lines.push(`    debugHighlightRenderers: true,`);
+  if (settings.debugDisableAnimations)    lines.push(`    debugDisableAnimations: true,`);
+
+  return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n${lines.join('\n')}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
 }
 
 function MessageEnrichmentSection({ enrich, onChange, accentColor }) {
@@ -252,6 +302,242 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
           {showFor('panel') && <Toggle checked={settings.showLayoutPicker} onChange={(v) => onChange({ ...settings, showLayoutPicker: v })}  label="Chat View Switcher" hint="config.showLayoutPicker" modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showLayoutPicker')} />}
           {showFor('panel') && <Toggle checked={settings.showMaximize}     onChange={(v) => onChange({ ...settings, showMaximize: v })}      label="Expand to Center"   hint="config.showMaximize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMaximize')} />}
           {showFor('panel') && <Toggle checked={settings.showMinimize}     onChange={(v) => onChange({ ...settings, showMinimize: v })}      label="Minimize Button"    hint="config.showMinimize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMinimize')} />}
+          <Toggle checked={settings.showTransportBadge ?? false} onChange={(v) => onChange({ ...settings, showTransportBadge: v })} label="Transport Badge in Header" hint="config.showTransportBadge" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showTransportBadge')} />
+        </div>
+
+        <hr className="border-slate-100" />
+
+        {/* Timestamps & Dates */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Timestamps &amp; Dates</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Time captions below bubbles and sticky date chips between day groups.</p>
+          </div>
+          <Toggle
+            label="Show time below bubbles"
+            hint="config.showBubbleTime"
+            checked={settings.showBubbleTime ?? false}
+            onChange={(v) => onChange({ ...settings, showBubbleTime: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+            onLabelClick={() => scrollToConfigProp('showBubbleTime')}
+          />
+          {settings.showBubbleTime && (
+            <div className="pl-1 space-y-1">
+              <p className="text-[10px] text-slate-400 font-mono">config.bubbleTimeFormat</p>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { id: 'h:mm A',    label: '12:14 PM' },
+                  { id: 'HH:mm',     label: '14:14' },
+                  { id: 'h:mm:ss A', label: '12:14:05 PM' },
+                ].map(({ id, label }) => {
+                  const active = (settings.bubbleTimeFormat ?? 'h:mm A') === id;
+                  return (
+                    <button key={id}
+                      onClick={() => onChange({ ...settings, bubbleTimeFormat: id })}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${active ? 'text-white shadow-sm' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                      style={active ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+                    >{label}</button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <Toggle
+            label="Show date separator chips"
+            hint="config.showDateSeparators"
+            checked={settings.showDateSeparators ?? false}
+            onChange={(v) => onChange({ ...settings, showDateSeparators: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+            onLabelClick={() => scrollToConfigProp('showDateSeparators')}
+          />
+          {settings.showDateSeparators && (
+            <div className="pl-1 space-y-1">
+              <p className="text-[10px] text-slate-400 font-mono">config.dateSeparatorFormat</p>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { id: 'auto',         label: 'Auto' },
+                  { id: 'ddd, MMM D',   label: 'Thu, Apr 23' },
+                  { id: 'MMMM D, YYYY', label: 'April 23, 2026' },
+                  { id: 'DD/MM/YYYY',   label: '23/04/2026' },
+                  { id: 'MM/DD/YYYY',   label: '04/23/2026' },
+                ].map(({ id, label }) => {
+                  const active = (settings.dateSeparatorFormat ?? 'auto') === id;
+                  return (
+                    <button key={id}
+                      onClick={() => onChange({ ...settings, dateSeparatorFormat: id })}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${active ? 'text-white shadow-sm' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                      style={active ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+                    >{label}</button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-slate-400 font-mono mt-1">config.dateSeparatorShape</p>
+              <div className="flex gap-2">
+                {[{ id: 'round', label: 'Round' }, { id: 'rect', label: 'Rect' }].map(({ id, label }) => {
+                  const active = (settings.dateSeparatorShape ?? 'round') === id;
+                  return (
+                    <button key={id}
+                      onClick={() => onChange({ ...settings, dateSeparatorShape: id })}
+                      className={`px-3 py-1 text-xs font-bold border transition-all ${active ? 'text-white shadow-sm' : 'border-slate-200 text-slate-500 hover:bg-slate-50'} ${id === 'round' ? 'rounded-full' : 'rounded'}`}
+                      style={active ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+                    >{label}</button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <hr className="border-slate-100" />
+
+        {/* Streaming */}
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Streaming</p>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                Mock live
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Toggle on to test SSE right here — this demo serves the stream endpoint and fires fake VERBOSE steps from <code className="font-mono bg-slate-100 px-0.5 rounded text-slate-500">data/fake-stream.js</code> on every message.
+            </p>
+          </div>
+          <Toggle
+            label="Stream enabled"
+            hint="config.stream.enabled"
+            checked={settings.streamEnabled ?? false}
+            onChange={(v) => onChange({ ...settings, streamEnabled: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+            onLabelClick={() => scrollToConfigProp('stream.enabled')}
+          />
+          {settings.streamEnabled && (
+            <>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { id: 'sse',   label: '📡 SSE' },
+                  { id: 'stomp', label: '🔌 STOMP' },
+                ].map(({ id, label }) => {
+                  const active = (settings.streamTransport ?? 'sse') === id;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => onChange({ ...settings, streamTransport: id })}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${active ? 'text-white shadow-md' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                      style={active ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        <hr className="border-slate-100" />
+
+        {/* Debug */}
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Debug</p>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-600 border border-amber-200">Dev only</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">Flags for local development and demos. All default <code className="font-mono bg-slate-100 px-0.5 rounded text-slate-500">false</code> — safe to ship. Each flag is independent and works in any consumer.</p>
+          </div>
+          <Toggle
+            label="Always show Agent is thinking…"
+            hint="config.debugShowVerbose"
+            checked={settings.debugShowVerbose ?? false}
+            onChange={(v) => onChange({ ...settings, debugShowVerbose: v })}
+            accentColor={settings.accentColor}
+          />
+          <Toggle
+            label="Show raw payload under bubbles"
+            hint="config.debugShowPayload"
+            checked={settings.debugShowPayload ?? false}
+            onChange={(v) => onChange({ ...settings, debugShowPayload: v })}
+            accentColor={settings.accentColor}
+          />
+          <Toggle
+            label="Show matched renderer name"
+            hint="config.debugShowRenderer"
+            checked={settings.debugShowRenderer ?? false}
+            onChange={(v) => onChange({ ...settings, debugShowRenderer: v })}
+            accentColor={settings.accentColor}
+          />
+          <Toggle
+            label="Show timestamps on bubbles"
+            hint="config.debugShowTimestamps"
+            checked={settings.debugShowTimestamps ?? false}
+            onChange={(v) => onChange({ ...settings, debugShowTimestamps: v })}
+            accentColor={settings.accentColor}
+          />
+          <Toggle
+            label="Show message IDs on bubbles"
+            hint="config.debugShowMessageId"
+            checked={settings.debugShowMessageId ?? false}
+            onChange={(v) => onChange({ ...settings, debugShowMessageId: v })}
+            accentColor={settings.accentColor}
+          />
+          {/* Simulated delay toggle + input */}
+          <div className="flex items-start gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={(settings.debugSimulateDelay ?? 0) > 0}
+              onClick={() => onChange({ ...settings, debugSimulateDelay: (settings.debugSimulateDelay ?? 0) > 0 ? 0 : 1500 })}
+              className="relative mt-0.5 flex-shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              style={{ width: 40, height: 22, backgroundColor: (settings.debugSimulateDelay ?? 0) > 0 ? settings.accentColor : '#e2e8f0' }}
+            >
+              <span
+                className="absolute top-[2px] left-0 bg-white rounded-full shadow transition-transform duration-200"
+                style={{ width: 18, height: 18, transform: (settings.debugSimulateDelay ?? 0) > 0 ? 'translateX(20px)' : 'translateX(2px)' }}
+              />
+            </button>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-snug text-slate-700">Response delay</p>
+              <p className="text-xs font-mono mt-0.5 text-slate-400">config.debugSimulateDelay</p>
+              {(settings.debugSimulateDelay ?? 0) > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="number"
+                    min="100" max="10000" step="100"
+                    value={settings.debugSimulateDelay}
+                    onChange={(e) => onChange({ ...settings, debugSimulateDelay: Math.max(0, Number(e.target.value)) })}
+                    className="w-24 text-sm border border-amber-200 rounded-lg px-3 py-1 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 font-mono text-center"
+                  />
+                  <span className="text-[11px] text-slate-400 font-mono">ms</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <Toggle
+            label="Simulate error response"
+            hint="config.debugSimulateError"
+            checked={settings.debugSimulateError ?? false}
+            onChange={(v) => onChange({ ...settings, debugSimulateError: v })}
+            accentColor={settings.accentColor}
+          />
+          <Toggle
+            label="Highlight renderer regions"
+            hint="config.debugHighlightRenderers"
+            checked={settings.debugHighlightRenderers ?? false}
+            onChange={(v) => onChange({ ...settings, debugHighlightRenderers: v })}
+            accentColor={settings.accentColor}
+          />
+          <Toggle
+            label="Disable all animations"
+            hint="config.debugDisableAnimations"
+            checked={settings.debugDisableAnimations ?? false}
+            onChange={(v) => onChange({ ...settings, debugDisableAnimations: v })}
+            accentColor={settings.accentColor}
+          />
         </div>
 
         <hr className="border-slate-100" />

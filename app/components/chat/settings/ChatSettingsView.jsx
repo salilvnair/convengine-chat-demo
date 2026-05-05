@@ -40,11 +40,19 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     panelBg:         { light: '', dark: '' },
     composerBg:      { light: '', dark: '' },
     iconColor:       { light: '', dark: '' },
+    userIconBg:      { light: '', dark: '' },
+    userIconColor:   { light: '', dark: '' },
+    agentIconBg:     { light: '', dark: '' },
+    agentIconColor:  { light: '', dark: '' },
     composerShape:   'round',
     // Preview
     previewDark:     false,
     // Message enrichment
     messageEnrichment: { mode: 'none', prefix: '', postfix: '', props: {} },
+    // Stream / SSE / STOMP
+    streamEnabled:      false,
+    streamTransport:    'sse',
+    showTransportBadge: false,
   });
 
   const [iconSvgs, setIconSvgs] = useState({ ...DEFAULT_ICON_SVGS });
@@ -110,6 +118,9 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
           <NavDot href="#props">Component Props</NavDot>
           <NavDot href="#config">config Object</NavDot>
           <NavDot href="#backend">Backend Routes</NavDot>
+          <NavDot href="#stream">Streaming (SSE/STOMP)</NavDot>
+          <NavDot href="#debug">Dev Mode Guide</NavDot>
+          <NavDot href="#timestamps">Timestamps &amp; Dates</NavDot>
           <NavDot href="#colors">Color Theming</NavDot>
           <NavDot href="#theme">Theme Tokens</NavDot>
           <NavDot href="#tailwind">Tailwind Integration</NavDot>
@@ -271,6 +282,7 @@ const myRenderer = {
                 <PropRow id="config-showLayoutPicker"      prop="showLayoutPicker"      type='boolean'  defaultVal='true'      description='Show the Chat View Switcher button in the header (panel mode only).' />
                 <PropRow id="config-showMaximize"          prop="showMaximize"          type='boolean'  defaultVal='true'      description='Show the Expand to Center (maximize) button in the panel header.' />
                 <PropRow id="config-showMinimize"          prop="showMinimize"          type='boolean'  defaultVal='true'      description='Show the Minimize button in the panel header.' />
+                <PropRow id="config-showTransportBadge"    prop="showTransportBadge"    type='boolean'  defaultVal='false'     description='Show a REST / SSE / STOMP transport badge pill in the chat header. Works in all modes (panel, sidepanel, fullscreen). Independent of streaming — shows REST when stream is off, SSE or STOMP (green) when stream is on. Useful for demos and debugging.' />
                 <PropRow prop="icons"                 type='object'   defaultVal='{}'       description='Override any icon component. Each value must be a React component — see Custom Icons section.' />
                 <PropRow prop="renderers"             type='Array'    defaultVal='[]'       description='Custom renderer providers injected before built-ins.' />
                 <PropRow prop="bubbleUserBg"          type='string | { light, dark }'  defaultVal='undefined'  description='User bubble background. Plain string = both modes; { light, dark } for per-theme. Overrides --ce-bg-bubble-user.' />
@@ -279,6 +291,10 @@ const myRenderer = {
                 <PropRow prop="bubbleAgentText"       type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble text color. Overrides --ce-text-bubble-agent.' />
                 <PropRow prop="panelBg"               type='string | { light, dark }'  defaultVal='undefined'  description='Chat panel background color. Overrides --ce-bg-panel.' />
                 <PropRow prop="composerBg"            type='string | { light, dark }'  defaultVal='undefined'  description='Composer input area background. Overrides --ce-bg-composer.' />
+                <PropRow prop="userIconBg"            type='string | { light, dark }'  defaultVal='undefined'  description='User avatar background. Defaults to a transparent tint of the accent color. Overrides --ce-avatar-user-bg.' />
+                <PropRow prop="userIconColor"         type='string | { light, dark }'  defaultVal='undefined'  description='User avatar icon/text color. Defaults to the accent color. Overrides --ce-avatar-user-color.' />
+                <PropRow prop="agentIconBg"           type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar background. Defaults to a transparent tint of the agent bubble bg. Overrides --ce-avatar-agent-bg.' />
+                <PropRow prop="agentIconColor"        type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar icon/text color. Defaults to solid bubbleAgentBg when set; otherwise secondary text color. Overrides --ce-avatar-agent-color.' />
                 <PropRow prop="defaultDark"           type='boolean'                   defaultVal='false'      description='Seed the widget in dark mode on first render.' />
                 <PropRow prop="onMessage"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
                 <PropRow prop="onResponse"            type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
@@ -353,6 +369,215 @@ const myRenderer = {
             </DocCardBody>
           </DocCard>
 
+          {/* ── Streaming (SSE / STOMP) ── */}
+          <DocCard id="stream">
+            <SectionHeader gradient="bg-gradient-to-r from-green-500 to-teal-500" icon="📡" title="Streaming (SSE / STOMP)" subtitle="Real-time progress text and audit updates via Server-Sent Events or WebSocket" />
+            <DocCardBody>
+              <Tip color="green" icon="💡" title="How streaming works">
+                When <code className="font-mono text-xs bg-emerald-100 px-1 rounded">stream.enabled</code> is true the widget opens a
+                persistent SSE or STOMP connection to <code className="font-mono text-xs bg-emerald-100 px-1 rounded">/api/v1/conversation/stream/&#123;conversationId&#125;</code>.
+                Each event bumps <code className="font-mono text-xs bg-emerald-100 px-1 rounded">auditRevision</code> (triggering an audit
+                refetch) and <code className="font-mono text-xs bg-emerald-100 px-1 rounded">VERBOSE</code> events surface as animated progress
+                text in the typing indicator. <code className="font-mono text-xs bg-emerald-100 px-1 rounded">ENGINE_RETURN</code> / <code className="font-mono text-xs bg-emerald-100 px-1 rounded">ASSISTANT_OUTPUT</code> clear the progress text smoothly.
+              </Tip>
+
+              <PropsTable>
+                <PropRow id="config-stream.enabled" prop="stream.enabled"   type='boolean'             defaultVal='false'   description='Enable streaming. Off by default — REST-only behaviour is preserved when false.' />
+                <PropRow prop="stream.transport" type='"sse" | "stomp"'     defaultVal='"sse"'   description='SSE uses a simple EventSource connection. STOMP uses SockJS + @stomp/stompjs (must be on globalThis).' />
+                <PropRow prop="stream.wsBase"    type='string'              defaultVal='apiHost' description='STOMP only. The base URL of your WebSocket server — the library appends /ws-convengine to form the SockJS connection URL. Example: wsBase "http://localhost:8080" → connects to "http://localhost:8080/ws-convengine". Omit when the WS server is on the same host as apiHost.' />
+              </PropsTable>
+
+              <Tip color="green" icon="🚀" title="Live mock — test without a real backend">
+                Copy the file below, run it with <code className="font-mono text-xs bg-emerald-100 px-1 rounded">node mock-sse-server.mjs</code> (Node 18+, no dependencies),
+                then set <code className="font-mono text-xs bg-emerald-100 px-1 rounded">apiHost: 'http://localhost:9000'</code> and toggle
+                <code className="font-mono text-xs bg-emerald-100 px-1 rounded">stream.enabled</code> on in the Playground.
+                You will see the four progress steps appear in the typing indicator, then the echo reply arrive.
+              </Tip>
+
+              <CodeBlock lang="jsx" code={`// ── SSE (Server-Sent Events) ────────────────────────────────────\n// The widget opens EventSource to:\n//   GET {apiHost}/api/v1/conversation/stream/{conversationId}\n<ConvEngineChat\n  config={{\n    apiHost: 'http://localhost:9000',  // your backend\n    stream: { enabled: true, transport: 'sse' },\n    showTransportBadge: true,  // shows green 'SSE' badge in header\n  }}\n/>\n\n// ── STOMP (WebSocket) ────────────────────────────────────────────\n// wsBase is your WS server root. The library appends /ws-convengine.\n// e.g. wsBase 'http://localhost:8080' → connects to:\n//      http://localhost:8080/ws-convengine  (SockJS)\n// Then subscribes to STOMP topic:\n//   /topic/convengine/audit/{conversationId}\n// Install first: npm install @stomp/stompjs sockjs-client\n// Then in app entry: globalThis.StompJs = StompJs; globalThis.SockJS = SockJS;\n<ConvEngineChat\n  config={{\n    apiHost: 'http://localhost:8080',\n    stream: {\n      enabled:   true,\n      transport: 'stomp',\n      wsBase:    'http://localhost:8080', // optional — defaults to apiHost\n    },\n    showTransportBadge: true,\n  }}\n/>`} />
+
+              <div className="rounded-xl border border-green-100 bg-green-50/60 p-4 space-y-2">
+                <p className="text-xs font-bold text-green-700 uppercase tracking-wider">mock-sse-server.mjs — zero dependencies, Node 18+</p>
+                <p className="text-[11px] text-slate-500 mb-1">Save as <code className="font-mono bg-green-50 px-1 rounded">mock-sse-server.mjs</code> and run <code className="font-mono bg-green-50 px-1 rounded">node mock-sse-server.mjs</code>. Point the widget at <code className="font-mono bg-green-50 px-1 rounded">http://localhost:9000</code>.</p>
+                <CodeBlock lang="js" code={`// mock-sse-server.mjs
+import http from 'node:http';
+
+const registry = new Map(); // conversationId → Set<response>
+
+function sse(res, event, data) {
+  res.write('event: ' + event + '\\ndata: ' + JSON.stringify(data) + '\\n\\n');
+}
+
+http.createServer((req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+  const url = new URL(req.url, 'http://localhost');
+
+  // GET /api/v1/conversation/stream/:conversationId
+  if (req.method === 'GET' && url.pathname.startsWith('/api/v1/conversation/stream/')) {
+    const id = url.pathname.split('/').pop();
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    });
+    if (!registry.has(id)) registry.set(id, new Set());
+    registry.get(id).add(res);
+    sse(res, 'CONNECTED', {});
+    req.on('close', () => registry.get(id)?.delete(res));
+    return;
+  }
+
+  // POST /api/v1/conversation/message
+  if (req.method === 'POST' && url.pathname === '/api/v1/conversation/message') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      const { conversationId, message } = JSON.parse(body);
+      const listeners = registry.get(conversationId) ?? new Set();
+      // Fire 4 VERBOSE progress steps, 600 ms apart
+      const steps = [
+        '🔍 Parsing intent…',
+        '🧠 Matching context…',
+        '⚙️  Running step…',
+        '✍️  Generating response…',
+      ];
+      steps.forEach((text, i) =>
+        setTimeout(() =>
+          listeners.forEach(r => sse(r, 'VERBOSE', { verbose: { text } })),
+          (i + 1) * 600
+        )
+      );
+      // After all steps, signal done and send REST reply
+      const delay = steps.length * 600 + 400;
+      setTimeout(() => {
+        listeners.forEach(r => sse(r, 'ENGINE_RETURN', {}));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ response: 'Echo: "' + message + '" — mock reply.' }));
+      }, delay);
+    });
+    return;
+  }
+
+  res.writeHead(404); res.end();
+}).listen(9000, () => console.log('Mock SSE server → http://localhost:9000'));`} />
+              </div>
+
+              <div className="rounded-xl border border-green-100 bg-green-50/60 p-4 space-y-2">
+                <p className="text-xs font-bold text-green-700 uppercase tracking-wider">SSE endpoint your server must implement</p>
+                <code className="block font-mono text-xs text-emerald-700">GET /api/v1/conversation/stream/&#123;conversationId&#125;</code>
+                <p className="text-xs text-slate-600">Keep the connection open and push named SSE events using the <code className="font-mono bg-green-50 px-1 rounded">event: STAGE</code> format. Any event increments the audit revision. <code className="font-mono bg-green-50 px-1 rounded">VERBOSE</code> events must have <code className="font-mono bg-green-50 px-1 rounded">{`{ verbose: { text: "..." } }`}</code> in data.</p>
+                <CodeBlock lang="js" code={`// Node.js / Express SSE example\napp.get('/api/v1/conversation/stream/:id', (req, res) => {\n  res.set({\n    'Content-Type': 'text/event-stream',\n    'Cache-Control': 'no-cache',\n    'Connection': 'keep-alive',\n  });\n  res.write('event: CONNECTED\\ndata: {}\\n\\n');\n  // push VERBOSE events as steps run:\n  // res.write('event: VERBOSE\\ndata: {"verbose":{"text":"Thinking…"}}\\n\\n');\n  // push ENGINE_RETURN when done:\n  // res.write('event: ENGINE_RETURN\\ndata: {}\\n\\n');\n});`} />
+              </div>
+
+              <Tip color="amber" icon="⚠️" title="STOMP dependencies">
+                STOMP transport requires <code className="font-mono text-xs bg-amber-100 px-1 rounded">@stomp/stompjs</code> and <code className="font-mono text-xs bg-amber-100 px-1 rounded">sockjs-client</code> to be available on <code className="font-mono text-xs bg-amber-100 px-1 rounded">globalThis</code> (StompJs and SockJS). SSE has no extra dependencies.
+              </Tip>
+            </DocCardBody>
+          </DocCard>
+
+          {/* ── Dev Mode Guide ── */}
+          <DocCard id="debug">
+            <SectionHeader gradient="bg-gradient-to-r from-amber-500 to-orange-500" icon="🐞" title="Dev Mode Guide" subtitle="Debug flags for local development — all default false, zero cost in production" />
+            <DocCardBody>
+              <Tip color="amber" icon="⚠️" title="Safe to ship">
+                All <code className="font-mono text-xs bg-amber-100 px-1 rounded">debug*</code> flags default to <code className="font-mono text-xs bg-amber-100 px-1 rounded">false</code>. When
+                false, no extra DOM is rendered and there is no runtime cost. You can leave them in your config and flip them on locally
+                without ever reaching production.
+              </Tip>
+
+              <PropsTable>
+                <PropRow prop="debugShowVerbose"    type='boolean' defaultVal='false' description='Always render the “Agent is thinking…” typing indicator without sending a message. Useful for previewing the typing indicator animation and progress text styles.' />
+                <PropRow prop="debugShowPayload"    type='boolean' defaultVal='false' description='Show the raw response payload in a monospace block below every assistant bubble. JSON is auto pretty-printed. Essential when developing custom renderers to see exactly what the backend returns.' />
+                <PropRow prop="debugShowRenderer"   type='boolean' defaultVal='false' description='Show a green chip on every assistant bubble with the matched renderer key (e.g. “default”, “faq-answer”, your custom key, or “error”). Use this to verify renderer routing without the audit panel.' />
+                <PropRow prop="debugShowTimestamps" type='boolean' defaultVal='false' description='Show an HH:mm:ss chip on every bubble (both user and assistant). Useful for timing analysis in demos.' />
+                <PropRow prop="debugShowMessageId"  type='boolean' defaultVal='false' description='Show a truncated bubble id chip on every bubble. Useful for correlating React state with rendered DOM during development.' />
+                <PropRow prop="debugSimulateDelay"  type='number'  defaultVal='0'     description='Artificial delay in ms before every API response. Set to 0 to disable. Use to preview the typing indicator animation and loading states without a slow real backend.' />
+                <PropRow prop="debugSimulateError"  type='boolean' defaultVal='false' description='Force every send to return an error bubble instead of calling the API. Use to preview error bubble styling and test recovery flows without a failing backend.' />
+                <PropRow prop="debugHighlightRenderers" type='boolean' defaultVal='false' description='Add a dashed outline around every message bubble — amber for user, blue for agent. Use to verify renderer region boundaries and layout.' />
+                <PropRow prop="debugDisableAnimations" type='boolean' defaultVal='false' description='Disable all CSS transitions and animations on the widget. Useful for screenshot testing or reducing visual noise while inspecting layout.' />
+              </PropsTable>
+
+              <CodeBlock lang="jsx" code={`<ConvEngineChat
+  config={{
+    apiHost: 'http://localhost:8080',
+
+    // — turn on any combination during development —
+    debugShowVerbose:        true,   // typing indicator always visible
+    debugShowPayload:        true,   // raw payload block under each assistant bubble
+    debugShowRenderer:       true,   // green chip: which renderer matched
+    debugShowTimestamps:     true,   // HH:mm:ss on every bubble
+    debugShowMessageId:      true,   // truncated id chip on every bubble
+    debugSimulateDelay:      1500,   // 1.5 s artificial delay before response
+    debugSimulateError:      true,   // always return an error bubble
+    debugHighlightRenderers: true,   // dashed outline on every bubble
+    debugDisableAnimations:  true,   // kill all transitions & animations
+  }}
+/>`} />
+
+              <Tip color="blue" icon="💡" title="Renderer development workflow">
+                Enable <code className="font-mono text-xs bg-blue-100 px-1 rounded">debugShowPayload</code> +
+                <code className="font-mono text-xs bg-blue-100 px-1 rounded">debugShowRenderer</code> together while building a custom renderer.
+                The payload block shows the exact JSON your renderer receives and the renderer chip confirms the routing key matched.
+                No need to open DevTools.
+              </Tip>
+
+              <Tip color="green" icon="🚀" title="Preview without a backend">
+                Enable <code className="font-mono text-xs bg-emerald-100 px-1 rounded">debugShowVerbose</code> to preview the typing indicator
+                animation and progress text (<code className="font-mono text-xs bg-emerald-100 px-1 rounded">progressText</code> prop on the typing indicator)
+                before you have a working SSE stream. Combine with <code className="font-mono text-xs bg-emerald-100 px-1 rounded">stream.enabled</code>
+                and this demo’s mock SSE server to see the full flow.
+              </Tip>
+            </DocCardBody>
+          </DocCard>
+
+          {/* ── Timestamps & Dates ── */}
+          <DocCard id="timestamps">
+            <SectionHeader gradient="bg-gradient-to-r from-teal-500 to-cyan-500" icon="🕐" title="Timestamps &amp; Dates" subtitle="Time captions below bubbles and  sticky date chips between day groups" />
+            <DocCardBody>
+              <PropsTable>
+                <PropRow id="config-showBubbleTime"      prop="showBubbleTime"      type='boolean' defaultVal='false'   description='Show a formatted time caption below every message bubble (user + assistant). Format is controlled by bubbleTimeFormat.' />
+                <PropRow prop="bubbleTimeFormat"    type='string'  defaultVal="'h:mm A'" description="Time format string. Tokens: h hh H HH mm ss A a. Examples: 'h:mm A' → 12:14 PM, 'HH:mm' → 14:14, 'h:mm:ss A' → 12:14:05 PM." />
+                <PropRow id="config-showDateSeparators" prop="showDateSeparators" type='boolean' defaultVal='false'   description="Show  sticky date separator chips between messages from different days. The chip sticks at the top of the scroll container while scrolling through the same day." />
+                <PropRow prop="dateSeparatorFormat" type='string'  defaultVal="'auto'"  description="Date format for the separator chip. Use 'auto' for Today/Yesterday/ddd, MMM D (WhatsApp style). Tokens: YYYY YY MMMM MMM MM M dddd ddd DD D." />
+                <PropRow prop="timeLabelBg"          type='string | { light, dark }' defaultVal='transparent' description='Background of the time caption. CSS var: --ce-time-label-bg.' />
+                <PropRow prop="timeLabelColor"       type='string | { light, dark }' defaultVal='text-secondary' description='Text color of the time caption. CSS var: --ce-time-label-color.' />
+                <PropRow prop="timeLabelBorderColor" type='string | { light, dark }' defaultVal='transparent' description='Border color of the time caption. CSS var: --ce-time-label-border.' />
+                <PropRow prop="dateLabelBg"          type='string | { light, dark }' defaultVal='rgba(0,0,0,0.05)' description='Background of the date separator chip. CSS var: --ce-date-chip-bg.' />
+                <PropRow prop="dateLabelColor"       type='string | { light, dark }' defaultVal='text-secondary' description='Text color of the date separator chip. CSS var: --ce-date-chip-color.' />
+                <PropRow prop="dateLabelBorderColor" type='string | { light, dark }' defaultVal='transparent' description='Border color of the date separator chip. CSS var: --ce-date-chip-border.' />
+              </PropsTable>
+
+              <CodeBlock lang="jsx" code={`<ConvEngineChat
+  config={{
+    apiHost: 'http://localhost:8080',
+
+    showBubbleTime:      true,
+    bubbleTimeFormat:    'h:mm A',       // 12:14 PM
+
+    showDateSeparators:  true,
+    dateSeparatorFormat: 'auto',         // Today / Yesterday / Thu, Apr 23
+
+    // optional: custom chip colors
+    dateLabelBg:    { light: 'rgba(0,0,0,0.06)', dark: 'rgba(255,255,255,0.10)' },
+    dateLabelColor: { light: '#475569',           dark: '#94a3b8' },
+  }}
+/>`} />
+
+              <Tip color="teal" icon="💡" title="How 'auto' date format works">
+                When <code className="font-mono text-xs bg-teal-100 px-1 rounded">dateSeparatorFormat</code> is set to{' '}
+                <code className="font-mono text-xs bg-teal-100 px-1 rounded">'auto'</code>, the chip shows{' '}
+                <strong>"Today"</strong> for the current day, <strong>"Yesterday"</strong> for the previous day, and{' '}
+                <strong>"ddd, MMM D"</strong> (e.g. "Thu, Apr 23") for older dates — exactly like WhatsApp.
+                The chip uses CSS <code className="font-mono text-xs bg-teal-100 px-1 rounded">position: sticky</code> inside the scroll container,
+                so it stays pinned at the top while you scroll through the day's messages and is pushed away when the next day's chip arrives.
+                No JavaScript scroll listeners needed.
+              </Tip>
+            </DocCardBody>
+          </DocCard>
+
           {/* ── Per-Theme Color API ── */}
           <DocCard id="colors">
             <SectionHeader gradient="bg-gradient-to-r from-violet-500 to-fuchsia-600" icon="🌗" title="Per-Theme Color API" subtitle="Different colors for light and dark mode — one config, two appearances" />
@@ -390,12 +615,16 @@ const myRenderer = {
                     </thead>
                     <tbody className="divide-y divide-slate-50 bg-white">
                       {[
-                        ['bubbleUserBg',    '--ce-bg-bubble-user',    'User message bubble — fill or gradient'],
-                        ['bubbleUserText',  '--ce-text-bubble-user',  'User message bubble text'],
-                        ['bubbleAgentBg',   '--ce-bg-bubble-agent',   'Assistant message bubble — fill or gradient'],
-                        ['bubbleAgentText', '--ce-text-bubble-agent', 'Assistant message bubble text'],
-                        ['panelBg',         '--ce-bg-panel',          'Chat panel / sidepanel background'],
-                        ['composerBg',      '--ce-bg-composer',       'Composer (input area) background'],
+                        ['bubbleUserBg',    '--ce-bg-bubble-user',       'User message bubble — fill or gradient'],
+                        ['bubbleUserText',  '--ce-text-bubble-user',     'User message bubble text'],
+                        ['bubbleAgentBg',   '--ce-bg-bubble-agent',      'Assistant message bubble — fill or gradient'],
+                        ['bubbleAgentText', '--ce-text-bubble-agent',    'Assistant message bubble text'],
+                        ['panelBg',         '--ce-bg-panel',             'Chat panel / sidepanel background'],
+                        ['composerBg',      '--ce-bg-composer',          'Composer (input area) background'],
+                        ['userIconBg',      '--ce-avatar-user-bg',       'User avatar background (default: tint of accent)'],
+                        ['userIconColor',   '--ce-avatar-user-color',    'User avatar icon color (default: accent color)'],
+                        ['agentIconBg',     '--ce-avatar-agent-bg',      'Agent avatar background (default: tint of agent bubble bg)'],
+                        ['agentIconColor',  '--ce-avatar-agent-color',   'Agent avatar icon color (default: bubbleAgentBg if set, else secondary text)'],
                       ].map(([prop, cssVar, desc]) => (
                         <tr key={prop} className="hover:bg-violet-50/40">
                           <td className="px-4 py-2.5"><code className="font-mono text-xs text-indigo-600 font-semibold">{prop}</code></td>
@@ -434,15 +663,19 @@ const myRenderer = {
                   </thead>
                   <tbody className="divide-y divide-slate-50 bg-white">
                     {[
-                      ['--ce-color-accent',      '#6366f1',    'Primary accent — buttons, FAB, highlights'],
-                      ['--ce-color-accent-hover', '#4f46e5',   'Accent hover state'],
-                      ['--ce-panel-width',        '460px',     'Width of the floating panel'],
-                      ['--ce-panel-height',       '660px',     'Max-height of the floating panel'],
-                      ['--ce-sidepanel-width',    '400px',     'Width of the side drawer'],
-                      ['--ce-bg-panel',           '#ffffff',   'Panel / sidepanel background'],
-                      ['--ce-bg-bubble-user',     '#6366f1',   'User message bubble fill'],
-                      ['--ce-bg-bubble-agent',    '#f1f5f9',   'Assistant message bubble fill'],
-                      ['--ce-font-family',        'system-ui', 'Font stack applied inside the widget'],
+                      ['--ce-color-accent',       '#6366f1',    'Primary accent — buttons, FAB, highlights'],
+                      ['--ce-color-accent-hover',  '#4f46e5',   'Accent hover state'],
+                      ['--ce-panel-width',         '460px',     'Width of the floating panel'],
+                      ['--ce-panel-height',        '660px',     'Max-height of the floating panel'],
+                      ['--ce-sidepanel-width',     '400px',     'Width of the side drawer'],
+                      ['--ce-bg-panel',            '#ffffff',   'Panel / sidepanel background'],
+                      ['--ce-bg-bubble-user',      '#6366f1',   'User message bubble fill'],
+                      ['--ce-bg-bubble-agent',     '#f1f5f9',   'Assistant message bubble fill'],
+                      ['--ce-avatar-user-bg',      'color-mix(accent 14%)', 'User avatar background (tint of accent)'],
+                      ['--ce-avatar-user-color',   'var(--ce-color-accent)', 'User avatar icon color'],
+                      ['--ce-avatar-agent-bg',     'color-mix(agentBubbleBg 30%)', 'Agent avatar background (tint of agent bubble bg)'],
+                      ['--ce-avatar-agent-color',  '#64748b',   'Agent avatar icon color'],
+                      ['--ce-font-family',         'system-ui', 'Font stack applied inside the widget'],
                     ].map(([t, d, desc]) => (
                       <tr key={t} className="hover:bg-pink-50/40">
                         <td className="px-4 py-2.5 font-mono text-xs text-pink-600 font-semibold">{t}</td>
@@ -604,7 +837,7 @@ const myRenderer = {
 
         </div>
       </div>
-      <BackToTop />
+      <BackToTop accentColor={settings.accentColor} />
     </div>
   );
 }

@@ -370,7 +370,7 @@ function ProductRecommendationComponent({ payload, actions }) {
                   <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--ce-color-accent)', flexShrink: 0 }}>{p.price}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--ce-fg-muted)' }}>⭐ {p.rating} · {p.reviews.toLocaleString()} reviews</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--ce-fg-muted)' }}>⭐ {p.rating}{p.reviews != null ? ` · ${Number(p.reviews).toLocaleString()} reviews` : ''}</span>
                   {p.badge && (
                     <span style={{
                       background: 'var(--ce-color-accent-light)', color: 'var(--ce-color-accent)',
