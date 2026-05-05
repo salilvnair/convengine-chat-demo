@@ -4,7 +4,9 @@ const deployBasePath = process.env.NEXT_BASE_PATH || '';
 
 const nextConfig = {
   ...(isExport && { output: 'export' }),
-  ...(deployBasePath && {
+  // Only apply basePath/assetPrefix for static exports — not dev or regular builds,
+  // because basePath would shift API routes and break the local mock API.
+  ...(isExport && deployBasePath && {
     basePath: deployBasePath,
     assetPrefix: deployBasePath,
   }),
