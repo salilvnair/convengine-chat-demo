@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CodeBlock }   from './ui/CodeBlock.jsx';
 import { Tip }         from './ui/Tip.jsx';
 import { PropRow, PropsTable, DefaultBadge } from './ui/PropRow.jsx';
@@ -11,7 +11,7 @@ import { RendererLiveDemo } from './RendererLiveDemo.jsx';
 import { TailwindPlayground, TailwindNotificationPreview, TailwindSidebarPreview, TailwindClassInputDemo } from './TailwindSection.jsx';
 import { SvgPreview, svgStringToComponent, DEFAULT_ICON_SVGS, ICON_META } from './IconSection.jsx';
 
-export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatActionsRef = null }) {
+export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatActionsRef = null, darkMode = false }) {
   const [settings, setSettings] = useState({
     showFeedback:          true,
     showAudit:             false,
@@ -53,9 +53,21 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     streamEnabled:      false,
     streamTransport:    'sse',
     showTransportBadge: false,
+    // Landing chips
+    landingChips:                   [],
+    landingChipsOrientation:        'row',
+    landingChipsShape:              'round',
+    landingChipsAnchor:             'landingAgent',
+    landingChipsAnchorPadding:      '',
+    landingChipsAnchorPaddingUnit:  'px',
   });
 
   const [iconSvgs, setIconSvgs] = useState({ ...DEFAULT_ICON_SVGS });
+
+  // Auto-sync preview dark with the app-level dark mode toggle
+  useEffect(() => {
+    setSettings((s) => ({ ...s, previewDark: darkMode }));
+  }, [darkMode]);
 
   function buildIconComponents(svgs) {
     const result = {};
@@ -88,8 +100,8 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
       {!hideHeader && (
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Chat Settings &amp; Docs</h1>
-            <p className="text-slate-500 text-sm mt-1">Configure the widget live, then browse the full API reference below.</p>
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Chat Settings &amp; Docs</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Configure the widget live, then browse the full API reference below.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <FeatureChip label="⚛️ React 18+" color="sky" />
@@ -112,7 +124,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
       {/* Docs: sidebar + content */}
       <div className="flex gap-8 items-start">
         <nav className="hidden lg:flex flex-col gap-1 sticky top-20 w-44 flex-shrink-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 mb-1">On this page</p>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-2 mb-1">On this page</p>
           <NavDot href="#install">Installation</NavDot>
           <NavDot href="#quickstart">Quick Start</NavDot>
           <NavDot href="#props">Component Props</NavDot>
@@ -121,6 +133,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
           <NavDot href="#stream">Streaming (SSE/STOMP)</NavDot>
           <NavDot href="#debug">Dev Mode Guide</NavDot>
           <NavDot href="#timestamps">Timestamps &amp; Dates</NavDot>
+          <NavDot href="#landing-chips">Landing Chips</NavDot>
           <NavDot href="#colors">Color Theming</NavDot>
           <NavDot href="#theme">Theme Tokens</NavDot>
           <NavDot href="#tailwind">Tailwind Integration</NavDot>
@@ -138,12 +151,12 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
             <DocCardBody>
               <Tip color="blue" icon="💡" title="Requirements">React 18+ and react-dom. Peer dependencies only — no bundled React copy.</Tip>
               <CodeBlock lang="bash" code={`npm install @salilvnair/convengine-chat\n# or link a local build during development\nnpm install ../convengine-chat`} />
-              <p className="text-sm text-slate-600">Import the CSS once in your app entry:</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">Import the CSS once in your app entry:</p>
               <CodeBlock lang="jsx" code={`// app/layout.jsx  (or any JS/JSX entry file)\nimport '@salilvnair/convengine-chat/style.css';`} />
               <Tip color="amber" icon="⚡" title="Next.js users">
-                Add <code className="font-mono text-xs bg-amber-100 px-1 rounded">transpilePackages: [&apos;@salilvnair/convengine-chat&apos;]</code> to your <code className="font-mono text-xs bg-amber-100 px-1 rounded">next.config.mjs</code>.{' '}
-                <strong>Only needed when using a local <code className="font-mono text-xs bg-amber-100 px-1 rounded">file:</code> path during development</strong> — not required once the package is published to npm,
-                because the published version ships only the pre-built <code className="font-mono text-xs bg-amber-100 px-1 rounded">dist/</code> output (no raw JSX).
+                Add <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">transpilePackages: [&apos;@salilvnair/convengine-chat&apos;]</code> to your <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">next.config.mjs</code>.{' '}
+                <strong>Only needed when using a local <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">file:</code> path during development</strong> — not required once the package is published to npm,
+                because the published version ships only the pre-built <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">dist/</code> output (no raw JSX).
               </Tip>
               <CodeBlock lang="js" code={`// next.config.mjs\nconst nextConfig = {\n  transpilePackages: ['@salilvnair/convengine-chat'],\n};\nexport default nextConfig;`} />
             </DocCardBody>
@@ -204,20 +217,34 @@ const myRenderer = {
   config={{
     apiHost:        'http://localhost:8080',
     conversationId: undefined,
-    title:       'ConvEngine Assistant',
-    subtitle:    "Ask me anything — I'll do my best to help.",
+    icons: { ChatBubbleIcon: MyFabIcon },
+    landingChips: [
+      { chipText: "📊 Activity",  chatText: "Show my recent account activity" },
+      { chipText: "🔑 Password",  chatText: "How do I reset my password?" },
+      { chipText: "🛟 Support",   chatText: "I need to contact customer support" },
+    ],
+    landingChipsAnchor:        'landingAgent',  // 'landingAgent' | 'chatbox'
+    landingChipsAnchorPadding: 8,               // gap in px (default 8)
+    landingChipsOrientation:   'row',           // 'row' | 'column'
+    landingChipsShape:         'round',         // 'round' | 'rect'
+    onMessage:  (text) => console.log('user sent:', text),
+    onResponse: (text) => console.log('AI replied:', text),
     placeholder: 'Ask ConvEngine…',
-    showFeedback:          true,
+    renderers: [myRenderer],
     showAudit:             false,
-    showEngineStatus:      true,
     showDarkModeLightMode: false,
+    showEngineStatus:      true,
+    showFeedback:          true,
     showHeaderDot:         true,
     showLandingAvatar:     true,
     showLandingSubtitle:   true,
-    icons: { ChatBubbleIcon: MyFabIcon },
-    renderers: [myRenderer],
-    onMessage:  (text) => console.log('user sent:', text),
-    onResponse: (text) => console.log('AI replied:', text),
+    showLayoutPicker:      true,
+    showMaximize:          true,
+    showMinimize:          true,
+    showNewChat:           true,
+    showTransportBadge:    false,
+    subtitle:    "Ask me anything — I'll do my best to help.",
+    title:       'ConvEngine Assistant',
   }}
   theme={{
     'color-accent':        '#6366f1',
@@ -262,42 +289,59 @@ const myRenderer = {
             <SectionHeader gradient="bg-gradient-to-r from-orange-500 to-amber-500" icon="⚙️" title="config Object" subtitle="Passed as config={{ ... }} to <ConvEngineChat />" />
             <DocCardBody>
               <Tip color="amber" icon="🔒" title="Security note">
-                <code className="font-mono text-xs bg-amber-100 px-1 rounded">apiHost</code> is called from the browser. Make sure your ConvEngine backend has CORS enabled for your frontend origin.
+                <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">apiHost</code> is called from the browser. Make sure your ConvEngine backend has CORS enabled for your frontend origin.
               </Tip>
               <PropsTable>
-                <PropRow prop="apiHost"               type='string'   defaultVal='""'            description='Base URL of your backend. Omit for same-origin servers. Pass a full URL (e.g. "http://localhost:8080") for a separate backend.' />
-                <PropRow prop="conversationId"        type='string'   defaultVal='undefined'     description='Resume an existing conversation by ID.' />
-                <PropRow prop="apiEndpoints"          type='object'   defaultVal='undefined'     description='Override individual endpoint paths. Keys: message, feedback, audit. Each is a path ("/api/v1/message") or full URL. Unspecified keys fall back to {apiHost}/api/v1/conversation/{name}. See Backend Routes section.' />
-                <PropRow prop="title"                 type='string'   defaultVal='"ConvEngine Assistant"'                      description='Header title and landing screen heading.' />
-                <PropRow prop="subtitle"              type='string'   defaultVal={"\"Ask me anything \u2014 I'll do my best to help.\""} description='Landing screen subtitle shown below the title.' />
-                <PropRow prop="placeholder"           type='string'   defaultVal='"Ask ConvEngine…"'                           description='Composer input placeholder text.' />
-                <PropRow id="config-showFeedback"          prop="showFeedback"          type='boolean'  defaultVal='true'      description='Show 👍👎 feedback buttons under assistant messages.' />
+                {/* ── A ── */}
+                <PropRow prop="agentIconBg"            type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar background. Defaults to a transparent tint of the agent bubble bg. Overrides --ce-avatar-agent-bg.' />
+                <PropRow prop="agentIconColor"         type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar icon/text color. Defaults to solid bubbleAgentBg when set; otherwise secondary text color. Overrides --ce-avatar-agent-color.' />
+                <PropRow prop="apiEndpoints"           type='object'   defaultVal='undefined'     description='Override individual endpoint paths. Keys: message, feedback, audit. Each is a path ("/api/v1/message") or full URL. Unspecified keys fall back to {apiHost}/api/v1/conversation/{name}. See Backend Routes section.' />
+                <PropRow prop="apiHost"                type='string'   defaultVal='""'            description='Base URL of your backend. Omit for same-origin servers. Pass a full URL (e.g. "http://localhost:8080") for a separate backend.' />
+                {/* ── B ── */}
+                <PropRow prop="bubbleAgentBg"          type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble background. Overrides --ce-bg-bubble-agent.' />
+                <PropRow prop="bubbleAgentText"        type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble text color. Overrides --ce-text-bubble-agent.' />
+                <PropRow prop="bubbleUserBg"           type='string | { light, dark }'  defaultVal='undefined'  description='User bubble background. Plain string = both modes; { light, dark } for per-theme. Overrides --ce-bg-bubble-user.' />
+                <PropRow prop="bubbleUserText"         type='string | { light, dark }'  defaultVal='undefined'  description='User bubble text color. Overrides --ce-text-bubble-user.' />
+                {/* ── C ── */}
+                <PropRow prop="composerBg"             type='string | { light, dark }'  defaultVal='undefined'  description='Composer input area background. Overrides --ce-bg-composer.' />
+                <PropRow prop="conversationId"         type='string'   defaultVal='undefined'     description='Resume an existing conversation by ID.' />
+                {/* ── D ── */}
+                <PropRow prop="defaultDark"            type='boolean'                   defaultVal='false'      description='Seed the widget in dark mode on first render.' />
+                {/* ── I ── */}
+                <PropRow prop="icons"                  type='object'   defaultVal='{}'       description='Override any icon component. Each value must be a React component — see Custom Icons section.' />
+                {/* ── L ── */}
+                <PropRow prop="landingChips"           type='string[] | {chipText,chatText}[]'  defaultVal='null'  description='Suggestion chips on the landing screen. String array uses same text as label and message. Object array allows a separate chipText (visible) and chatText (sent).' />
+                <PropRow prop="landingChipsAnchor"     type='"landingAgent" | "chatbox"'        defaultVal='"landingAgent"'  description='"landingAgent" places chips below the hero avatar. "chatbox" pins chips above the composer with content growing bottom→top (ChatGPT style).' />
+                <PropRow prop="landingChipsAnchorPadding" type='number | string'               defaultVal='8'     description='Gap in px between the anchor and the chips. Pass a number (8) or CSS string ("8px"). Default 8px.' />
+                <PropRow prop="landingChipsOrientation" type='"row" | "column"'               defaultVal='"row"'  description='Layout direction of the chips container.' />
+                <PropRow prop="landingChipsShape"      type='"round" | "rect"'                defaultVal='"round"' description='Border-radius style — pill (round) or card (rect).' />
+                {/* ── O ── */}
+                <PropRow prop="onMessage"              type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
+                <PropRow prop="onResponse"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
+                {/* ── P ── */}
+                <PropRow prop="panelBg"                type='string | { light, dark }'  defaultVal='undefined'  description='Chat panel background color. Overrides --ce-bg-panel.' />
+                <PropRow prop="placeholder"            type='string'   defaultVal='"Ask ConvEngine…"'  description='Composer input placeholder text.' />
+                {/* ── R ── */}
+                <PropRow prop="renderers"              type='Array'    defaultVal='[]'       description='Custom renderer providers injected before built-ins.' />
+                {/* ── S ── */}
                 <PropRow id="config-showAudit"             prop="showAudit"             type='boolean'  defaultVal='false'     description='Show the audit trail side panel (fullscreen only).' />
-                <PropRow id="config-showEngineStatus"      prop="showEngineStatus"      type='boolean'  defaultVal='true'      description='Show the engine status bar (intent, state, response time) in fullscreen and sidepanel modes.' />
                 <PropRow id="config-showDarkModeLightMode" prop="showDarkModeLightMode" type='boolean'  defaultVal='false'     description='Show the dark/light mode toggle button in the header.' />
+                <PropRow id="config-showEngineStatus"      prop="showEngineStatus"      type='boolean'  defaultVal='true'      description='Show the engine status bar (intent, state, response time) in fullscreen and sidepanel modes.' />
+                <PropRow id="config-showFeedback"          prop="showFeedback"          type='boolean'  defaultVal='true'      description='Show 👍👎 feedback buttons under assistant messages.' />
                 <PropRow id="config-showHeaderDot"         prop="showHeaderDot"         type='boolean'  defaultVal='true'      description='Show the pulsing accent dot next to the header title.' />
                 <PropRow id="config-showLandingAvatar"     prop="showLandingAvatar"     type='boolean'  defaultVal='true'      description='Show the bot avatar icon on the landing screen.' />
                 <PropRow id="config-showLandingSubtitle"   prop="showLandingSubtitle"   type='boolean'  defaultVal='true'      description='Show the subtitle text on the landing screen.' />
-                <PropRow id="config-showNewChat"           prop="showNewChat"           type='boolean'  defaultVal='true'      description='Show the New Chat button in the header (panel and fullscreen modes).' />
                 <PropRow id="config-showLayoutPicker"      prop="showLayoutPicker"      type='boolean'  defaultVal='true'      description='Show the Chat View Switcher button in the header (panel mode only).' />
                 <PropRow id="config-showMaximize"          prop="showMaximize"          type='boolean'  defaultVal='true'      description='Show the Expand to Center (maximize) button in the panel header.' />
                 <PropRow id="config-showMinimize"          prop="showMinimize"          type='boolean'  defaultVal='true'      description='Show the Minimize button in the panel header.' />
+                <PropRow id="config-showNewChat"           prop="showNewChat"           type='boolean'  defaultVal='true'      description='Show the New Chat button in the header (panel and fullscreen modes).' />
                 <PropRow id="config-showTransportBadge"    prop="showTransportBadge"    type='boolean'  defaultVal='false'     description='Show a REST / SSE / STOMP transport badge pill in the chat header. Works in all modes (panel, sidepanel, fullscreen). Independent of streaming — shows REST when stream is off, SSE or STOMP (green) when stream is on. Useful for demos and debugging.' />
-                <PropRow prop="icons"                 type='object'   defaultVal='{}'       description='Override any icon component. Each value must be a React component — see Custom Icons section.' />
-                <PropRow prop="renderers"             type='Array'    defaultVal='[]'       description='Custom renderer providers injected before built-ins.' />
-                <PropRow prop="bubbleUserBg"          type='string | { light, dark }'  defaultVal='undefined'  description='User bubble background. Plain string = both modes; { light, dark } for per-theme. Overrides --ce-bg-bubble-user.' />
-                <PropRow prop="bubbleUserText"        type='string | { light, dark }'  defaultVal='undefined'  description='User bubble text color. Overrides --ce-text-bubble-user.' />
-                <PropRow prop="bubbleAgentBg"         type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble background. Overrides --ce-bg-bubble-agent.' />
-                <PropRow prop="bubbleAgentText"       type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble text color. Overrides --ce-text-bubble-agent.' />
-                <PropRow prop="panelBg"               type='string | { light, dark }'  defaultVal='undefined'  description='Chat panel background color. Overrides --ce-bg-panel.' />
-                <PropRow prop="composerBg"            type='string | { light, dark }'  defaultVal='undefined'  description='Composer input area background. Overrides --ce-bg-composer.' />
-                <PropRow prop="userIconBg"            type='string | { light, dark }'  defaultVal='undefined'  description='User avatar background. Defaults to a transparent tint of the accent color. Overrides --ce-avatar-user-bg.' />
-                <PropRow prop="userIconColor"         type='string | { light, dark }'  defaultVal='undefined'  description='User avatar icon/text color. Defaults to the accent color. Overrides --ce-avatar-user-color.' />
-                <PropRow prop="agentIconBg"           type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar background. Defaults to a transparent tint of the agent bubble bg. Overrides --ce-avatar-agent-bg.' />
-                <PropRow prop="agentIconColor"        type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar icon/text color. Defaults to solid bubbleAgentBg when set; otherwise secondary text color. Overrides --ce-avatar-agent-color.' />
-                <PropRow prop="defaultDark"           type='boolean'                   defaultVal='false'      description='Seed the widget in dark mode on first render.' />
-                <PropRow prop="onMessage"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
-                <PropRow prop="onResponse"            type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
+                {/* ── T ── */}
+                <PropRow prop="subtitle"               type='string'   defaultVal={"\"Ask me anything \u2014 I'll do my best to help.\""} description='Landing screen subtitle shown below the title.' />
+                <PropRow prop="title"                  type='string'   defaultVal='"ConvEngine Assistant"'  description='Header title and landing screen heading.' />
+                {/* ── U ── */}
+                <PropRow prop="userIconBg"             type='string | { light, dark }'  defaultVal='undefined'  description='User avatar background. Defaults to a transparent tint of the accent color. Overrides --ce-avatar-user-bg.' />
+                <PropRow prop="userIconColor"          type='string | { light, dark }'  defaultVal='undefined'  description='User avatar icon/text color. Defaults to the accent color. Overrides --ce-avatar-user-color.' />
               </PropsTable>
             </DocCardBody>
           </DocCard>
@@ -473,7 +517,7 @@ http.createServer((req, res) => {
               </div>
 
               <Tip color="amber" icon="⚠️" title="STOMP dependencies">
-                STOMP transport requires <code className="font-mono text-xs bg-amber-100 px-1 rounded">@stomp/stompjs</code> and <code className="font-mono text-xs bg-amber-100 px-1 rounded">sockjs-client</code> to be available on <code className="font-mono text-xs bg-amber-100 px-1 rounded">globalThis</code> (StompJs and SockJS). SSE has no extra dependencies.
+                STOMP transport requires <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">@stomp/stompjs</code> and <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">sockjs-client</code> to be available on <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">globalThis</code> (StompJs and SockJS). SSE has no extra dependencies.
               </Tip>
             </DocCardBody>
           </DocCard>
@@ -483,7 +527,7 @@ http.createServer((req, res) => {
             <SectionHeader gradient="bg-gradient-to-r from-amber-500 to-orange-500" icon="🐞" title="Dev Mode Guide" subtitle="Debug flags for local development — all default false, zero cost in production" />
             <DocCardBody>
               <Tip color="amber" icon="⚠️" title="Safe to ship">
-                All <code className="font-mono text-xs bg-amber-100 px-1 rounded">debug*</code> flags default to <code className="font-mono text-xs bg-amber-100 px-1 rounded">false</code>. When
+                All <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">debug*</code> flags default to <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">false</code>. When
                 false, no extra DOM is rendered and there is no runtime cost. You can leave them in your config and flip them on locally
                 without ever reaching production.
               </Tip>
@@ -787,6 +831,38 @@ http.createServer((req, res) => {
             </DocCardBody>
           </DocCard>
 
+          {/* ── Landing Chips ── */}
+          <DocCard id="landing-chips">
+            <SectionHeader gradient="bg-gradient-to-r from-indigo-500 to-purple-600" icon="💬" title="Landing Chips" subtitle="Suggestion chips displayed below the landing avatar — click to send as a user message" />
+            <DocCardBody>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Landing chips let you pre-populate the empty-chat screen with common prompts. A chip fires as if the user typed and sent that text — the message bubble appears immediately and the backend receives the query.
+              </p>
+
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 space-y-3">
+                <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">config props</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {[
+                    { prop: 'landingChips', type: 'string[] | {chipText,chatText}[]', def: 'null', desc: 'Array of chip values. Strings use the same text for both label and message; objects allow a separate visible label and a longer message.' },
+                    { prop: 'landingChipsAnchor', type: '"landingAgent" | "chatbox"', def: '"landingAgent"', desc: '"landingAgent" places chips below the avatar (classic). "chatbox" pins them just above the composer with chips growing bottom→top (ChatGPT/Copilot style).' },
+                    { prop: 'landingChipsAnchorPadding', type: 'number | string', def: '8', desc: 'Gap in px between the anchor and the chips. Pass a number (e.g. 12) or a CSS string (e.g. "12px"). Defaults to 8px.' },
+                    { prop: 'landingChipsOrientation', type: '"row" | "column"', def: '"row"', desc: 'Layout direction of the chip row.' },
+                    { prop: 'landingChipsShape', type: '"round" | "rect"', def: '"round"', desc: 'Border-radius style — pill (round) or card (rect).' },
+                  ].map(({ prop, type, def, desc }) => (
+                    <div key={prop} className="rounded-lg bg-white border border-indigo-100 p-3 space-y-1">
+                      <code className="text-xs font-mono text-indigo-700 font-bold">{prop}</code>
+                      <p className="text-[10px] text-slate-400 font-mono">{type}</p>
+                      <p className="text-[10px] text-slate-500">Default: <code className="bg-indigo-50 px-1 rounded">{def}</code></p>
+                      <p className="text-xs text-slate-500">{desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    // ── Plain text chips ─────────────────────────────\n    landingChips: [\n      "Show recent activity",\n      "How do I reset my password?",\n      "Contact support",\n    ],\n\n    // ── Or label + longer message ───────────────────\n    landingChips: [\n      { chipText: "📊 Activity",  chatText: "Show my recent account activity" },\n      { chipText: "🔑 Password",  chatText: "How do I reset my password?" },\n      { chipText: "🛟 Support",   chatText: "I need to contact customer support" },\n    ],\n\n    landingChipsAnchor:        "landingAgent",  // "landingAgent" | "chatbox"\n    landingChipsAnchorPadding: 8,               // gap in px (default 8)\n    landingChipsOrientation:   "row",           // "row" | "column"\n    landingChipsShape:         "round",         // "round" | "rect"\n  }}\n/>`} />
+            </DocCardBody>
+          </DocCard>
+
           {/* ── Per-Theme Color API ── */}
           <DocCard id="colors">
             <SectionHeader gradient="bg-gradient-to-r from-violet-500 to-fuchsia-600" icon="🌗" title="Per-Theme Color API" subtitle="Different colors for light and dark mode — one config, two appearances" />
@@ -924,8 +1000,8 @@ http.createServer((req, res) => {
               <TailwindNotificationPreview />
               <TailwindSidebarPreview />
               <Tip color="amber" icon="⚠️" title="Using Tailwind v4?">
-                In Tailwind v4, skip <code className="font-mono text-xs bg-amber-100 px-1 rounded">tailwind.config.js</code> and
-                add <code className="font-mono text-xs bg-amber-100 px-1 rounded">{`@theme { --color-brand: var(--ce-color-accent); }`}</code> to your CSS instead.
+                In Tailwind v4, skip <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">tailwind.config.js</code> and
+                add <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">{`@theme { --color-brand: var(--ce-color-accent); }`}</code> to your CSS instead.
               </Tip>
             </DocCardBody>
           </DocCard>
@@ -1028,7 +1104,7 @@ http.createServer((req, res) => {
               </div>
               <CodeBlock lang="jsx" code={`function StarIcon(props) {\n  return (\n    <svg viewBox="0 0 24 24" fill="currentColor"\n      className="ce-icon" aria-hidden="true" {...props}>\n      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77\n               l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>\n    </svg>\n  );\n}\n\n<ConvEngineChat\n  config={{\n    icons: {\n      ChatBubbleIcon: StarIcon,\n      // AgentIcon: MyRobotIcon,\n      // UserIcon:  MyPersonIcon,\n    },\n  }}\n/>`} />
               <Tip color="amber" icon="⚠️" title="Sizing">
-                Always omit <code className="font-mono text-xs bg-amber-100 px-1 rounded">width</code> / <code className="font-mono text-xs bg-amber-100 px-1 rounded">height</code> attributes — CSS handles sizing via <code className="font-mono text-xs bg-amber-100 px-1 rounded">.ce-icon</code>.
+                Always omit <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">width</code> / <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">height</code> attributes — CSS handles sizing via <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">.ce-icon</code>.
               </Tip>
             </DocCardBody>
           </DocCard>

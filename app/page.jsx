@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef }   from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ConvEngineChat }       from '@salilvnair/convengine-chat';
 import { MetricCard }           from './components/demo/MetricCard.jsx';
 import { RevenueChart }         from './components/demo/RevenueChart.jsx';
@@ -49,6 +49,29 @@ function ChevronLeftIcon({ className = '' }) {
   );
 }
 
+function DarkModeToggle({ darkMode, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 flex-shrink-0"
+    >
+      {darkMode ? (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+          <circle cx="12" cy="12" r="5" />
+          <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    Dashboard overview content
 ───────────────────────────────────────────────────────────────────────────── */
@@ -57,10 +80,10 @@ function DashboardContent() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Welcome back, Salil. Here&apos;s what&apos;s happening today.</p>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Dashboard</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Welcome back, Salil. Here&apos;s what&apos;s happening today.</p>
         </div>
-        <span className="text-sm text-slate-400">April 29, 2026</span>
+        <span className="text-sm text-slate-400 dark:text-slate-500">April 29, 2026</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -82,16 +105,19 @@ function DashboardContent() {
 /* ─────────────────────────────────────────────────────────────────────────────
    Landing page
 ───────────────────────────────────────────────────────────────────────────── */
-function LandingPage({ onSelect }) {
+function LandingPage({ onSelect, darkMode, onToggleDark }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/20 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-violet-50/20 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900 flex flex-col">
       {/* Top bar */}
-      <header className="bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            CE
-          </span>
-          <span className="font-semibold text-slate-800">ConvEngine</span>
+      <header className="bg-white/80 dark:bg-slate-900/90 backdrop-blur border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              CE
+            </span>
+            <span className="font-semibold text-slate-800 dark:text-slate-100">ConvEngine</span>
+          </div>
+          <DarkModeToggle darkMode={darkMode} onToggle={onToggleDark} />
         </div>
       </header>
 
@@ -106,10 +132,10 @@ function LandingPage({ onSelect }) {
           <ZapIcon className="w-10 h-10 text-violet-300" />
         </div>
 
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-800 tracking-tight mb-3">
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight mb-3">
           ConvEngine Chat
         </h1>
-        <p className="text-slate-500 text-lg max-w-md mx-auto mb-14">
+        <p className="text-slate-500 dark:text-slate-400 text-lg max-w-md mx-auto mb-14">
           Embed a fully-featured AI chat widget into any React app — in minutes.
         </p>
 
@@ -118,18 +144,18 @@ function LandingPage({ onSelect }) {
           {/* Demo tile */}
           <button
             onClick={() => onSelect('demo')}
-            className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-indigo-200 transition-all duration-300 p-8 text-left flex flex-col items-start gap-5 cursor-pointer"
+            className="group bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-indigo-200 dark:hover:border-indigo-600 transition-all duration-300 p-8 text-left flex flex-col items-start gap-5 cursor-pointer"
           >
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/50 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900 transition-colors flex items-center justify-center">
               <BrowserIcon className="w-7 h-7 text-indigo-500" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-1">Demo</h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-1">Demo</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                 Explore a full analytics dashboard with ConvEngine Chat integrated as a floating widget or side panel.
               </p>
             </div>
-            <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 group-hover:bg-indigo-100 px-3 py-1 rounded-full transition-colors">
+            <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/50 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900 px-3 py-1 rounded-full transition-colors">
               Open Dashboard →
             </span>
           </button>
@@ -137,25 +163,25 @@ function LandingPage({ onSelect }) {
           {/* Quickstart tile */}
           <button
             onClick={() => onSelect('quickstart')}
-            className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-violet-200 transition-all duration-300 p-8 text-left flex flex-col items-start gap-5 cursor-pointer"
+            className="group bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl hover:border-violet-200 dark:hover:border-violet-600 transition-all duration-300 p-8 text-left flex flex-col items-start gap-5 cursor-pointer"
           >
-            <div className="w-14 h-14 rounded-2xl bg-violet-50 group-hover:bg-violet-100 transition-colors flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-violet-50 dark:bg-violet-900/50 group-hover:bg-violet-100 dark:group-hover:bg-violet-900 transition-colors flex items-center justify-center">
               <ZapIcon className="w-7 h-7 text-violet-500" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-1">Quickstart</h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-1">Quickstart</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                 Configure the chat widget, browse the full API reference, and grab copy-paste code snippets to ship fast.
               </p>
             </div>
-            <span className="text-xs font-semibold text-violet-500 bg-violet-50 group-hover:bg-violet-100 px-3 py-1 rounded-full transition-colors">
-              Configure & Ship →
+            <span className="text-xs font-semibold text-violet-500 bg-violet-50 dark:bg-violet-900/50 group-hover:bg-violet-100 dark:group-hover:bg-violet-900 px-3 py-1 rounded-full transition-colors">
+              Configure &amp; Ship →
             </span>
           </button>
         </div>
       </main>
 
-      <footer className="text-center pb-8 text-xs text-slate-400">
+      <footer className="text-center pb-8 text-xs text-slate-400 dark:text-slate-500">
         ConvEngine Chat SDK &mdash; v0.1.0
       </footer>
     </div>
@@ -165,11 +191,11 @@ function LandingPage({ onSelect }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    Shared app shell (nav + content)
 ───────────────────────────────────────────────────────────────────────────── */
-function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, activeTab, onTab, onBack, right, children }) {
+function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, activeTab, onTab, onBack, right, children, darkMode, onToggleDark }) {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-100 sticky top-0 z-40">
-        <div className="max-w-screen-2xl mx-auto px-6 h-14 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 sticky top-0 z-40">
+        <div className="px-6 h-14 flex items-center justify-between gap-4">
           {/* Logo + back */}
           <button
             onClick={onBack}
@@ -179,8 +205,8 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
             <span className="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-xs font-bold">
               CE
             </span>
-            <span className="font-semibold text-slate-800 hidden sm:block">{title}</span>
-            <ChevronLeftIcon className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors ml-0.5" />
+            <span className="font-semibold text-slate-800 dark:text-slate-100 hidden sm:block">{title}</span>
+            <ChevronLeftIcon className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors ml-0.5" />
           </button>
 
           {/* Tabs */}
@@ -191,7 +217,7 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
                   key={tab}
                   onClick={() => onTab(tab)}
                   className={`px-4 py-1.5 rounded-lg font-medium transition-colors ${
-                    activeTab === tab ? accentClass : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                    activeTab === tab ? accentClass : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
                   }`}
                 >
                   {tab}
@@ -204,7 +230,7 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
           <div className="flex items-center gap-3 flex-shrink-0">
             {tabs && (
               <select
-                className="md:hidden text-sm border border-slate-200 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-400"
+                className="md:hidden text-sm border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 outline-none focus:border-indigo-400 dark:bg-slate-800 dark:text-slate-200"
                 value={activeTab}
                 onChange={(e) => onTab(e.target.value)}
               >
@@ -212,6 +238,7 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
               </select>
             )}
             {right}
+            <DarkModeToggle darkMode={darkMode} onToggle={onToggleDark} />
           </div>
         </div>
       </header>
@@ -229,7 +256,7 @@ function AppShell({ title, accentClass = 'text-indigo-600 bg-indigo-50', tabs, a
 ───────────────────────────────────────────────────────────────────────────── */
 const DEMO_TABS = ['Dashboard', 'Orders', 'Analytics', 'Profile'];
 
-function DemoApp({ onBack }) {
+function DemoApp({ onBack, darkMode, onToggleDark }) {
   const [activeTab,   setActiveTab]   = useState('Dashboard');
   const [chatMode,    setChatMode]    = useState('panel');
   const [chatSettings, setChatSettings] = useState({
@@ -251,6 +278,8 @@ function DemoApp({ onBack }) {
         onTab={setActiveTab}
         onBack={onBack}
         right={<ProfileDropdown onNavigate={(tab) => setActiveTab(tab)} />}
+        darkMode={darkMode}
+        onToggleDark={onToggleDark}
       >
         {activeTab === 'Dashboard'  && <DashboardContent />}
         {activeTab === 'Orders'     && <OrdersView />}
@@ -272,6 +301,7 @@ function DemoApp({ onBack }) {
             showAudit:             chatSettings.showAudit,
             showFeedback:          chatSettings.showFeedback,
             showDarkModeLightMode: chatSettings.showDarkModeLightMode,
+            defaultDark:           darkMode,
             renderers:             interactiveRenderers,
           }}
           theme={{
@@ -286,7 +316,7 @@ function DemoApp({ onBack }) {
 /* ─────────────────────────────────────────────────────────────────────────────
    Quickstart app  (Chat Settings only)
 ───────────────────────────────────────────────────────────────────────────── */
-function QuickstartApp({ onBack }) {
+function QuickstartApp({ onBack, darkMode, onToggleDark }) {
   const [chatMode,    setChatMode]    = useState('panel');
   const [chatSettings, setChatSettings] = useState({
     showFeedback:          true,
@@ -343,6 +373,11 @@ function QuickstartApp({ onBack }) {
   const [iconComponents, setIconComponents] = useState({});
   const chatActionsRef = useRef(null);
 
+  // Sync previewDark with app-level dark mode
+  useEffect(() => {
+    setChatSettings((s) => ({ ...s, previewDark: darkMode }));
+  }, [darkMode]);
+
   const resolvedMode  = chatMode === 'fullscreen' ? 'panel' : chatMode.startsWith('sidepanel') ? 'sidepanel' : 'panel';
   const resolvedAlign = chatMode === 'sidepanel-left' ? 'left' : 'right';
 
@@ -350,11 +385,14 @@ function QuickstartApp({ onBack }) {
     <>
       <AppShell
         title="Chat Quickstart, Settings & Docs"
-        accentClass="text-violet-600 bg-violet-50"
+        accentClass="text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/30"
         onBack={onBack}
+        darkMode={darkMode}
+        onToggleDark={onToggleDark}
       >
         <ChatSettingsView
           hideHeader
+          darkMode={darkMode}
           chatActionsRef={chatActionsRef}
           onSettingsChange={(s, icons) => {
             setChatSettings(s);
@@ -386,7 +424,7 @@ function QuickstartApp({ onBack }) {
             showLayoutPicker:      chatSettings.showLayoutPicker,
             showMaximize:          chatSettings.showMaximize,
             showMinimize:          chatSettings.showMinimize,
-            defaultDark:           chatSettings.previewDark,
+            defaultDark:           darkMode || chatSettings.previewDark,
             bubbleUserBg:          chatSettings.bubbleUserBg,
             bubbleUserText:        chatSettings.bubbleUserText,
             bubbleAgentBg:         chatSettings.bubbleAgentBg,
@@ -426,6 +464,13 @@ function QuickstartApp({ onBack }) {
             dateLabelBg:             chatSettings.dateLabelBg,
             dateLabelColor:          chatSettings.dateLabelColor,
             dateLabelBorderColor:    chatSettings.dateLabelBorderColor,
+            landingChips:               chatSettings.landingChips?.length ? chatSettings.landingChips : undefined,
+            landingChipsOrientation:    chatSettings.landingChipsOrientation    ?? 'row',
+            landingChipsShape:          chatSettings.landingChipsShape          ?? 'round',
+            landingChipsAnchor:         chatSettings.landingChipsAnchor         ?? 'landingAgent',
+            landingChipsAnchorPadding:  (chatSettings.landingChipsAnchorPadding !== '' && chatSettings.landingChipsAnchorPadding != null)
+                ? `${chatSettings.landingChipsAnchorPadding}${chatSettings.landingChipsAnchorPaddingUnit ?? 'px'}`
+                : undefined,
           }}
           theme={{
             'color-accent': chatSettings.accentColor,
@@ -441,9 +486,21 @@ function QuickstartApp({ onBack }) {
 ───────────────────────────────────────────────────────────────────────────── */
 export default function RootPage() {
   const [view, setView] = useState('landing'); // 'landing' | 'demo' | 'quickstart'
+  const [darkMode, setDarkMode] = useState(false);
 
-  if (view === 'demo')       return <DemoApp       onBack={() => setView('landing')} />;
-  if (view === 'quickstart') return <QuickstartApp onBack={() => setView('landing')} />;
-  return <LandingPage onSelect={setView} />;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (darkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  function toggleDark() { setDarkMode((d) => !d); }
+
+  if (view === 'demo')       return <DemoApp       darkMode={darkMode} onToggleDark={toggleDark} onBack={() => setView('landing')} />;
+  if (view === 'quickstart') return <QuickstartApp darkMode={darkMode} onToggleDark={toggleDark} onBack={() => setView('landing')} />;
+  return <LandingPage darkMode={darkMode} onToggleDark={toggleDark} onSelect={setView} />;
 }
 

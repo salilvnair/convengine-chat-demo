@@ -29,8 +29,8 @@ export function Toggle({ checked, onChange, label, hint, modes, accentColor, onL
           <p
             className={`text-sm font-semibold leading-snug ${
               clickable
-                ? 'text-indigo-600 cursor-pointer hover:underline'
-                : 'text-slate-700'
+                ? 'text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline'
+                : 'text-slate-700 dark:text-slate-300'
             }`}
             onClick={onLabelClick}
             title={clickable ? 'View in API docs' : undefined}
@@ -39,14 +39,14 @@ export function Toggle({ checked, onChange, label, hint, modes, accentColor, onL
             <span className="text-[9px] text-indigo-400 font-semibold bg-indigo-50 border border-indigo-100 px-1 py-0.5 rounded leading-none select-none">↓ docs</span>
           )}
           {modes && modes.map((m) => (
-            <span key={m} className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${MODE_BADGE[m] ?? 'bg-slate-100 text-slate-500'}`}>{m}</span>
+            <span key={m} className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${MODE_BADGE[m] ?? 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>{m}</span>
           ))}
         </div>
         <p
           className={`text-xs font-mono mt-0.5 ${
             clickable
               ? 'text-indigo-400 cursor-pointer hover:underline hover:text-indigo-600'
-              : 'text-slate-400'
+              : 'text-slate-400 dark:text-slate-500'
           }`}
           onClick={onLabelClick}
           title={clickable ? 'View in API docs' : undefined}

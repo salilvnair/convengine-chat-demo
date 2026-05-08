@@ -125,7 +125,7 @@ export function IconGrid({ iconSvgs, onIconChange, onIconReset, currentMode, acc
         </div>
         {Object.entries(groups).map(([grpName, keys]) => (
           <div key={grpName}>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{grpName}</p>
+            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">{grpName}</p>
             <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
               {keys.map((key) => {
                 const m = ICON_META[key];
@@ -133,27 +133,27 @@ export function IconGrid({ iconSvgs, onIconChange, onIconReset, currentMode, acc
                 return (
                   <div
                     key={key}
-                    className="group relative flex flex-col items-center gap-1 bg-slate-50 border border-slate-100 rounded-xl p-2 hover:border-indigo-200 hover:bg-white hover:shadow-sm transition-all"
+                    className="group relative flex flex-col items-center gap-1 bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600 rounded-xl p-2 hover:border-indigo-200 dark:hover:border-indigo-500 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm transition-all"
                   >
                     {isModified && (
                       <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400" />
                     )}
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white border border-slate-100">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-600">
                       <SvgPreview innerSvg={iconSvgs[key]} fill={m.fill} size={18} accentColor={resolvedIconColor} />
                     </div>
-                    <p className="text-[9px] font-medium text-slate-500 text-center leading-tight line-clamp-2 w-full">{m.label}</p>
+                    <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 text-center leading-tight line-clamp-2 w-full">{m.label}</p>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pt-0.5">
                       <button
                         title="Copy SVG"
                         onClick={() => handleCopy(key)}
-                        className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors text-[9px] font-bold"
+                        className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors text-[9px] font-bold"
                       >
                         {copied === key ? '✓' : '⎘'}
                       </button>
                       <button
                         title="Edit SVG"
                         onClick={() => setEditKey(key)}
-                        className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 bg-white text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors text-[10px]"
+                        className="w-5 h-5 flex items-center justify-center rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-indigo-500 dark:hover:text-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-500 transition-colors text-[10px]"
                       >
                         ✏
                       </button>
@@ -172,39 +172,39 @@ export function IconGrid({ iconSvgs, onIconChange, onIconReset, currentMode, acc
           onClick={() => setEditKey(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl p-5 w-[340px] space-y-3"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5 w-[340px] space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-semibold text-slate-800 text-sm">{meta.label}</p>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{meta.hint}</p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Used in: {meta.where}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{meta.label}</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{meta.hint}</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Used in: {meta.where}</p>
               </div>
               <button
                 onClick={() => setEditKey(null)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
               >✕</button>
             </div>
-            <div className="flex items-center justify-center h-14 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-center justify-center h-14 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-100 dark:border-slate-600">
               <SvgPreview innerSvg={iconSvgs[editKey]} fill={meta.fill} size={32} accentColor={resolvedIconColor} />
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Inner SVG markup</p>
-              <p className="text-[10px] text-slate-400">Paths/shapes only — no outer &lt;svg&gt; tag</p>
+              <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Inner SVG markup</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">Paths/shapes only — no outer &lt;svg&gt; tag</p>
               <textarea
                 rows={4}
                 value={iconSvgs[editKey]}
                 onChange={(e) => onIconChange(editKey, e.target.value)}
                 spellCheck={false}
-                className="w-full text-[10px] font-mono border border-slate-200 rounded-lg px-2.5 py-2 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-white resize-y"
+                className="w-full text-[10px] font-mono border border-slate-200 dark:border-slate-600 rounded-lg px-2.5 py-2 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 bg-white dark:bg-slate-700 dark:text-slate-100 resize-y"
               />
             </div>
             <div className="flex items-center justify-between">
               {iconSvgs[editKey] !== DEFAULT_ICON_SVGS[editKey] ? (
                 <button
                   onClick={() => onIconChange(editKey, DEFAULT_ICON_SVGS[editKey])}
-                  className="text-xs text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-300 px-2.5 py-1 rounded-lg bg-white transition-all"
+                  className="text-xs text-slate-400 dark:text-slate-500 hover:text-rose-500 border border-slate-200 dark:border-slate-600 hover:border-rose-300 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 transition-all"
                 >
                   ↺ Reset
                 </button>

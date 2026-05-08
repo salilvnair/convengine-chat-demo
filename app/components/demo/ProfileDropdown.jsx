@@ -40,17 +40,17 @@ export function ProfileDropdown({ onNavigate }) {
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-10 w-60 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-fade-in">
+        <div className="absolute right-0 top-10 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50 animate-fade-in">
           {/* User card */}
-          <div className="px-4 py-3 border-b border-slate-100">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-indigo-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">
                 S
               </div>
               <div className="min-w-0">
-                <p className="font-semibold text-slate-800 text-sm truncate">Salil Nair</p>
-                <p className="text-xs text-slate-400 truncate">salil@example.com</p>
-                <span className="inline-block mt-0.5 text-xs text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-medium">
+                <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate">Salil Nair</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 truncate">salil@example.com</p>
+                <span className="inline-block mt-0.5 text-xs text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40 px-1.5 py-0.5 rounded font-medium">
                   Admin · Pro Plan
                 </span>
               </div>
@@ -61,7 +61,7 @@ export function ProfileDropdown({ onNavigate }) {
           <div className="py-1">
             {MENU_ITEMS.map((item, i) => {
               if (item === null) {
-                return <div key={`div-${i}`} className="my-1 border-t border-slate-100" />;
+                return <div key={`div-${i}`} className="my-1 border-t border-slate-100 dark:border-slate-700" />;
               }
               return (
                 <button
@@ -70,8 +70,8 @@ export function ProfileDropdown({ onNavigate }) {
                     setOpen(false);
                     if (item.label === 'View Profile') onNavigate?.('Settings');
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 transition-colors ${
-                    item.danger ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-700'
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors ${
+                    item.danger ? 'text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20' : 'text-slate-700 dark:text-slate-200'
                   }`}
                 >
                   <span className="text-base w-5 text-center">{item.icon}</span>

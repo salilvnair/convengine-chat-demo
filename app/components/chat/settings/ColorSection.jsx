@@ -106,8 +106,8 @@ export function ColorAssetInput({ configKey, label, hint, value, onChange }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
-        <p className="text-xs font-semibold text-slate-700 leading-none">{label}</p>
-        <p className="text-[10px] text-slate-400 font-mono">{hint}</p>
+        <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 leading-none">{label}</p>
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{hint}</p>
       </div>
       <div className="space-y-1">
         <ColorVariantRow
@@ -152,7 +152,7 @@ export function ColorGrid({ settings, onChange, currentMode, accentColor = '#636
             <button
               key={key}
               onClick={() => setEditKey(key)}
-              className="group flex flex-col gap-1.5 bg-slate-50 border border-slate-100 rounded-xl p-2.5 hover:border-indigo-200 hover:bg-white hover:shadow-sm transition-all text-left"
+              className="group flex flex-col gap-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-700 rounded-xl p-2.5 hover:border-indigo-200 dark:hover:border-indigo-600 hover:bg-white dark:hover:bg-slate-700 hover:shadow-sm transition-all text-left"
             >
               <div className="flex w-full rounded-lg overflow-hidden h-6 border border-slate-200">
                 <div
@@ -163,7 +163,7 @@ export function ColorGrid({ settings, onChange, currentMode, accentColor = '#636
                 </div>
               </div>
               <div className="flex items-center justify-between gap-1">
-                <p className="text-[10px] font-semibold text-slate-600 leading-tight">{label}</p>
+                <p className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 leading-tight">{label}</p>
                 {isModified && <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />}
               </div>
               <p className="text-[9px] text-slate-400 font-mono truncate">{hint}</p>
@@ -178,17 +178,17 @@ export function ColorGrid({ settings, onChange, currentMode, accentColor = '#636
           onClick={() => setEditKey(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl p-5 w-[360px] space-y-3"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-5 w-[360px] space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-semibold text-slate-800 text-sm">{editMeta.label}</p>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{editMeta.hint}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{editMeta.label}</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">{editMeta.hint}</p>
               </div>
               <button
                 onClick={() => setEditKey(null)}
-                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors flex-shrink-0"
               >✕</button>
             </div>
             <ColorAssetInput
@@ -202,7 +202,7 @@ export function ColorGrid({ settings, onChange, currentMode, accentColor = '#636
               {(settings[editKey]?.light?.trim() || settings[editKey]?.dark?.trim()) ? (
                 <button
                   onClick={() => onChange({ ...settings, [editKey]: { light: '', dark: '' } })}
-                  className="text-xs text-slate-400 hover:text-rose-500 border border-slate-200 hover:border-rose-300 px-2.5 py-1 rounded-lg bg-white transition-all"
+                  className="text-xs text-slate-400 hover:text-rose-500 border border-slate-200 dark:border-slate-600 hover:border-rose-300 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-400 transition-all"
                 >
                   ↺ Reset
                 </button>

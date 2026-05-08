@@ -27,14 +27,14 @@ export function ColorPicker({ value, onChange }) {
   }
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+    <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 space-y-3">
       <div className="flex items-center gap-3">
         <div
-          className="w-10 h-10 rounded-xl shadow-inner border border-white ring-1 ring-slate-200 flex-shrink-0"
+          className="w-10 h-10 rounded-xl shadow-inner border border-white dark:border-slate-600 ring-1 ring-slate-200 dark:ring-slate-600 flex-shrink-0"
           style={{ background: value }}
         />
         <div className="flex-1">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Current Accent</p>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">Current Accent</p>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -43,11 +43,11 @@ export function ColorPicker({ value, onChange }) {
               onChange={(e) => setHex(e.target.value)}
               onBlur={() => applyHex(hex)}
               onKeyDown={(e) => e.key === 'Enter' && applyHex(hex)}
-              className="w-28 px-2.5 py-1.5 text-xs font-mono border border-slate-200 rounded-lg outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 bg-white"
+              className="w-28 px-2.5 py-1.5 text-xs font-mono border border-slate-200 dark:border-slate-600 rounded-lg outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 bg-white dark:bg-slate-700 dark:text-slate-100"
               placeholder="#6366f1"
             />
             <label className="relative cursor-pointer">
-              <span className="px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white text-slate-500 hover:bg-slate-50 transition-colors font-medium select-none">
+              <span className="px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors font-medium select-none">
                 🎨 Custom
               </span>
               <input
@@ -68,7 +68,7 @@ export function ColorPicker({ value, onChange }) {
             onClick={() => handleSwatchClick(c)}
             style={{ background: c }}
             className={`w-7 h-7 flex-shrink-0 rounded-lg border-2 transition-all hover:scale-110 active:scale-95 ${
-              value === c ? 'border-slate-800 ring-2 ring-offset-1 ring-slate-400 scale-110' : 'border-white shadow-sm'
+              value === c ? 'border-slate-800 dark:border-white ring-2 ring-offset-1 ring-slate-400 dark:ring-slate-300 scale-110' : 'border-white dark:border-slate-600 shadow-sm'
             }`}
           />
         ))}
