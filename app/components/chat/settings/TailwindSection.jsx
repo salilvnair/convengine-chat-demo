@@ -139,30 +139,30 @@ export function TailwindPlayground() {
   const TABS = [{ id: 'button', label: '🔵 Button' }, { id: 'card', label: '🃏 Card' }, { id: 'text', label: '🔤 Text' }];
 
   return (
-    <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-sky-100 flex flex-wrap items-center gap-2">
+    <div className="rounded-2xl border border-sky-100 dark:border-sky-900 bg-gradient-to-br from-sky-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800 overflow-hidden">
+      <div className="px-4 py-3 border-b border-sky-100 dark:border-sky-900 flex flex-wrap items-center gap-2">
         <span className="text-base">🎨</span>
         <div>
-          <p className="text-sm font-bold text-sky-800">Tailwind Playground — Try it live</p>
-          <p className="text-xs text-sky-500">Click an option → watch the preview change → read the Tailwind className that produced it</p>
+          <p className="text-sm font-bold text-sky-800 dark:text-sky-300">Tailwind Playground — Try it live</p>
+          <p className="text-xs text-sky-500 dark:text-sky-400">Click an option → watch the preview change → read the Tailwind className that produced it</p>
         </div>
       </div>
-      <div className="flex border-b border-sky-100">
+      <div className="flex border-b border-sky-100 dark:border-sky-900">
         {TABS.map(({ id, label }) => (
           <button key={id} onClick={() => setTab(id)}
-            className={`px-4 py-2.5 text-xs font-semibold transition-colors ${tab === id ? 'bg-white text-sky-700 border-b-2 border-sky-500' : 'text-sky-500 hover:bg-sky-100/60'}`}
+            className={`px-4 py-2.5 text-xs font-semibold transition-colors ${tab === id ? 'bg-white dark:bg-slate-700 text-sky-700 dark:text-sky-300 border-b-2 border-sky-500' : 'text-sky-500 dark:text-sky-400 hover:bg-sky-100/60 dark:hover:bg-sky-900/30'}`}
           >{label}</button>
         ))}
       </div>
       <div className="p-4 space-y-3">
         {tab === 'button' && (
           <>
-            <div className="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-center min-h-[80px]">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex items-center justify-center min-h-[80px]">
               <button style={btnPreviewStyle} onMouseEnter={() => setBHover(true)} onMouseLeave={() => setBHover(false)}>Click me</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Color</p>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Color</p>
                 <div className="flex flex-wrap gap-2">
                   {BTN_COLORS.map((p, i) => (
                     <button key={p.name} title={p.name} onClick={() => setBColor(i)}
@@ -172,35 +172,35 @@ export function TailwindPlayground() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Size</p>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Size</p>
                 <div className="flex gap-1">
                   {BTN_SIZES.map((s, i) => (
                     <button key={s.n} onClick={() => setBSize(i)}
-                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${bSize === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${bSize === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                     >{s.n}</button>
                   ))}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Shape</p>
+                <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Shape</p>
                 <div className="flex flex-wrap gap-1">
                   {BTN_SHAPES.map((s, i) => (
                     <button key={s.n} onClick={() => setBShape(i)}
-                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${bShape === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                      className={`px-2.5 py-1 rounded text-[10px] font-semibold transition-colors ${bShape === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                     >{s.n}</button>
                   ))}
                 </div>
               </div>
             </div>
             <div className="bg-slate-900 rounded-xl p-3">
-              <p className="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the button above:</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the button above:</p>
               <p className="text-xs font-mono text-emerald-300 break-all">&quot;{btnCls}&quot;</p>
             </div>
           </>
         )}
         {tab === 'card' && (
           <>
-            <div className="bg-slate-100 rounded-xl p-6 flex items-center justify-center min-h-[120px]">
+            <div className="bg-slate-100 dark:bg-slate-700 rounded-xl p-6 flex items-center justify-center min-h-[120px]">
               <div style={cardPreviewStyle}>
                 <p style={{ fontWeight: '600', color: '#334155', fontSize: '14px', marginBottom: 4 }}>Card Title</p>
                 <p style={{ fontSize: '12px', color: '#64748b' }}>Composed entirely from Tailwind utility classes — no custom CSS file needed.</p>
@@ -209,14 +209,14 @@ export function TailwindPlayground() {
             <div className="flex flex-wrap gap-2">
               {[{ label: 'Shadow', val: cShadow, set: setCshadow }, { label: 'Border', val: cBorder, set: setCborder }].map(({ label, val, set }) => (
                 <button key={label} onClick={() => set(v => !v)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${val ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${val ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                 ><span>{val ? '✓' : '○'}</span>{label}</button>
               ))}
               <div className="flex items-center gap-1">
                 <span className="text-[10px] text-slate-500 font-semibold">Padding:</span>
                 {CARD_PADDINGS.map((p, i) => (
                   <button key={p.n} onClick={() => setCpadding(i)}
-                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cPadding === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cPadding === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                   >{p.n}</button>
                 ))}
               </div>
@@ -224,7 +224,7 @@ export function TailwindPlayground() {
                 <span className="text-[10px] text-slate-500 font-semibold">Corners:</span>
                 {CARD_RADII.map((r, i) => (
                   <button key={r.n} onClick={() => setCrounded(i)}
-                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cRounded === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cRounded === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                   >{r.n}</button>
                 ))}
               </div>
@@ -232,20 +232,20 @@ export function TailwindPlayground() {
                 <span className="text-[10px] text-slate-500 font-semibold">BG:</span>
                 {CARD_BGS.map((b, i) => (
                   <button key={b.n} onClick={() => setCbg(i)}
-                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cBg === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${cBg === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                   >{b.n}</button>
                 ))}
               </div>
             </div>
             <div className="bg-slate-900 rounded-xl p-3">
-              <p className="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the card above:</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the card above:</p>
               <p className="text-xs font-mono text-emerald-300 break-all">&quot;{cardCls}&quot;</p>
             </div>
           </>
         )}
         {tab === 'text' && (
           <>
-            <div className="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-center min-h-[80px]">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex items-center justify-center min-h-[80px]">
               <p style={textPreviewStyle}>The quick brown fox jumps over the lazy dog</p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -254,7 +254,7 @@ export function TailwindPlayground() {
                 <div className="flex flex-wrap gap-1">
                   {TXT_COLORS.map((c, i) => (
                     <button key={c.n} onClick={() => setTcolor(i)}
-                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${tColor === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${tColor === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                     >{c.n}</button>
                   ))}
                 </div>
@@ -264,7 +264,7 @@ export function TailwindPlayground() {
                 <div className="flex flex-wrap gap-1">
                   {TXT_SIZES.map((s, i) => (
                     <button key={s.n} onClick={() => setTsize(i)}
-                      className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${tSize === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                      className={`px-2 py-1 rounded text-[10px] font-mono font-semibold transition-colors ${tSize === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                     >{s.n}</button>
                   ))}
                 </div>
@@ -274,7 +274,7 @@ export function TailwindPlayground() {
                 <div className="flex flex-wrap gap-1">
                   {TXT_WEIGHTS.map((w, i) => (
                     <button key={w.n} onClick={() => setTweight(i)}
-                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${tWeight === i ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${tWeight === i ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                     >{w.n}</button>
                   ))}
                 </div>
@@ -284,14 +284,14 @@ export function TailwindPlayground() {
                 <div className="flex gap-1">
                   {[{ label: 'italic', val: tItalic, set: setTitalic }, { label: 'underline', val: tUnder, set: setTunder }].map(({ label, val, set }) => (
                     <button key={label} onClick={() => set(v => !v)}
-                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${val ? 'bg-sky-600 text-white' : 'bg-white border border-slate-200 text-slate-500'}`}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-colors ${val ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400'}`}
                     >{label}</button>
                   ))}
                 </div>
               </div>
             </div>
             <div className="bg-slate-900 rounded-xl p-3">
-              <p className="text-[10px] text-slate-400 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the text above:</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-1 font-mono uppercase tracking-wider">The Tailwind className that styles the text above:</p>
               <p className="text-xs font-mono text-emerald-300 break-all">&quot;{textCls}&quot;</p>
             </div>
           </>
@@ -310,11 +310,11 @@ export function TailwindNotificationPreview() {
   const [opened, setOpened] = useState(false);
   const hex = TW_ACCENT_PRESETS[accent].hex;
   return (
-    <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-sky-100 flex flex-wrap items-center justify-between gap-2">
+    <div className="rounded-2xl border border-sky-100 dark:border-sky-900 bg-gradient-to-br from-sky-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800 overflow-hidden">
+      <div className="px-4 py-3 border-b border-sky-100 dark:border-sky-900 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm">▶</span>
-          <p className="text-sm font-bold text-sky-800">Live Preview</p>
+          <p className="text-sm font-bold text-sky-800 dark:text-sky-300">Live Preview</p>
         </div>
         <TwAccentPicker selected={accent} onSelect={setAccent} resetExtras={() => { setDismissed(false); setOpened(false); }} />
       </div>
@@ -329,7 +329,7 @@ export function TailwindNotificationPreview() {
           </div>
         ) : dismissed ? (
           <div className="text-center py-4">
-            <p className="text-xs text-slate-400">Banner dismissed.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">Banner dismissed.</p>
             <button onClick={() => setDismissed(false)} className="text-xs text-sky-500 hover:underline mt-1">Show again</button>
           </div>
         ) : (
@@ -358,17 +358,17 @@ export function TailwindSidebarPreview() {
   const hex = TW_ACCENT_PRESETS[accent].hex;
   const NAV_ITEMS = ['Dashboard', 'Messages', 'Settings', 'Profile'];
   return (
-    <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-cyan-50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-sky-100 flex flex-wrap items-center justify-between gap-2">
+    <div className="rounded-2xl border border-sky-100 dark:border-sky-900 bg-gradient-to-br from-sky-50 to-cyan-50 dark:from-slate-800 dark:to-slate-800 overflow-hidden">
+      <div className="px-4 py-3 border-b border-sky-100 dark:border-sky-900 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-sm">▶</span>
-          <p className="text-sm font-bold text-sky-800">Live Preview</p>
+          <p className="text-sm font-bold text-sky-800 dark:text-sky-300">Live Preview</p>
         </div>
         <TwAccentPicker selected={accent} onSelect={setAccent} resetExtras={() => setUnread(3)} />
       </div>
       <div className="p-4">
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex">
-          <div className="w-40 border-r border-slate-100 p-2 space-y-0.5 flex-shrink-0">
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex">
+          <div className="w-40 border-r border-slate-100 dark:border-slate-700 p-2 space-y-0.5 flex-shrink-0">
             {NAV_ITEMS.map((item) => {
               const isActive = item === activeNav;
               return (
@@ -389,10 +389,10 @@ export function TailwindSidebarPreview() {
             })}
           </div>
           <div className="flex-1 p-4 min-w-0">
-            <p className="font-semibold text-sm text-slate-700">{activeNav}</p>
+            <p className="font-semibold text-sm text-slate-700 dark:text-slate-200">{activeNav}</p>
             {activeNav === 'Messages' ? (
               <div className="mt-2 space-y-1.5">
-                <p className="text-xs text-slate-500">{unread > 0 ? `${unread} unread messages` : 'All caught up!'}</p>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{unread > 0 ? `${unread} unread messages` : 'All caught up!'}</span>
                 {unread > 0 && (
                   <button onClick={() => setUnread(0)}
                     className="text-xs font-semibold px-2.5 py-1 rounded-lg text-white" style={{ backgroundColor: hex }}
@@ -400,7 +400,7 @@ export function TailwindSidebarPreview() {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 mt-2">Click nav items to see active state.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">Click nav items to see active state.</p>
             )}
           </div>
         </div>
@@ -542,19 +542,19 @@ export function TailwindClassInputDemo() {
   }
 
   return (
-    <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-violet-50 overflow-hidden">
-      <div className="px-4 py-3 border-b border-indigo-100">
-        <p className="text-sm font-bold text-indigo-800">🎛️  Click classes to toggle — including bg-brand</p>
-        <p className="text-xs text-indigo-500 mt-0.5">
+    <div className="rounded-2xl border border-indigo-100 dark:border-indigo-900 bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-slate-800 dark:to-slate-800 overflow-hidden">
+      <div className="px-4 py-3 border-b border-indigo-100 dark:border-indigo-900">
+        <p className="text-sm font-bold text-indigo-800 dark:text-indigo-300">🎛️  Click classes to toggle — including bg-brand</p>
+        <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-0.5">
           Click any chip below to add or remove it. The preview and breakdown update instantly.
-          The <code className="bg-indigo-100 px-1 rounded font-mono">bg-brand</code>,{' '}
-          <code className="bg-indigo-100 px-1 rounded font-mono">text-brand</code>, and{' '}
-          <code className="bg-indigo-100 px-1 rounded font-mono">border-brand</code> chips are ConvEngine&apos;s accent — marked ✦
+          The <code className="bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded font-mono">bg-brand</code>,{' '}
+          <code className="bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded font-mono">text-brand</code>, and{' '}
+          <code className="bg-indigo-100 dark:bg-indigo-900/50 dark:text-indigo-300 px-1 rounded font-mono">border-brand</code> chips are ConvEngine&apos;s accent — marked ✦
         </p>
       </div>
       <div className="p-4 space-y-3">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Click to add / remove — ✦ = ConvEngine accent</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Click to add / remove — ✦ = ConvEngine accent</p>
           <div className="flex flex-wrap gap-1.5">
             {CHIPS.map(({ label, brand }) => {
               const active = activeSet.has(label);
@@ -563,7 +563,7 @@ export function TailwindClassInputDemo() {
                   className={`px-2 py-1 rounded-lg text-[11px] font-mono font-semibold transition-colors border ${
                     active
                       ? brand ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-sky-600 text-white border-sky-700'
-                      : brand ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      : brand ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600'
                   }`}
                 >
                   {label}{brand ? ' ✦' : ''}
@@ -573,14 +573,14 @@ export function TailwindClassInputDemo() {
           </div>
         </div>
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Preview</p>
-          <div className="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-center min-h-[80px]">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Preview</p>
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex items-center justify-center min-h-[80px]">
             <span style={{ ...styles, display: 'inline-block' }}>I am styled by your classes</span>
           </div>
         </div>
         {(resolved.length > 0 || unknown.length > 0) && (
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">What each class does</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">What each class does</p>
             <div className="overflow-x-auto rounded-xl border border-slate-700">
               <table className="w-full text-xs">
                 <thead>

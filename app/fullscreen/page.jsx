@@ -28,7 +28,7 @@ function FullscreenChat() {
   const composerShape    = params.get('composerShape')    === 'rect' ? 'rect' : 'round';
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#fff' }}>
+    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: darkMode ? '#0f172a' : '#fff' }}>
       <ConvEngineChat
         mode="fullscreen"
         config={{

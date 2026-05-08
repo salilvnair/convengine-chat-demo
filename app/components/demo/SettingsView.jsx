@@ -4,9 +4,9 @@ import { useState } from 'react';
 
 function Section({ title, children }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-100">
-        <h3 className="font-semibold text-slate-800">{title}</h3>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+        <h3 className="font-semibold text-slate-800 dark:text-slate-100">{title}</h3>
       </div>
       <div className="px-6 py-5 space-y-5">{children}</div>
     </div>
@@ -17,8 +17,8 @@ function Field({ label, hint, children }) {
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
       <div className="sm:w-48 flex-shrink-0">
-        <p className="text-sm font-medium text-slate-700">{label}</p>
-        {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</p>
+        {hint && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{hint}</p>}
       </div>
       <div className="flex-1">{children}</div>
     </div>
@@ -53,27 +53,27 @@ export function SettingsView() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Settings</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage your account, workspace and preferences.</p>
+        <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Settings</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage your account, workspace and preferences.</p>
       </div>
 
       {/* Profile */}
       <Section title="Profile">
         <Field label="Full name">
-          <input defaultValue="Salil Nair" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-400" />
+          <input defaultValue="Salil Nair" className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100" />
         </Field>
         <Field label="Email">
-          <input defaultValue="salil@example.com" type="email" className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-400" />
+          <input defaultValue="salil@example.com" type="email" className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100" />
         </Field>
         <Field label="Role">
-          <select className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 text-slate-700">
+          <select className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700">
             <option>Admin</option>
             <option>Editor</option>
             <option>Viewer</option>
           </select>
         </Field>
         <Field label="Timezone">
-          <select className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 text-slate-700">
+          <select className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700">
             <option>Asia/Kolkata (IST, UTC+5:30)</option>
             <option>America/New_York (EST, UTC-5)</option>
             <option>Europe/London (GMT, UTC+0)</option>
@@ -102,12 +102,12 @@ export function SettingsView() {
             <input
               readOnly
               value="sk-ce-••••••••••••••••••••••••••••••••"
-              className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 font-mono text-slate-500 outline-none"
+              className="flex-1 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 bg-slate-50 dark:bg-slate-700 font-mono text-slate-500 dark:text-slate-400 outline-none"
             />
-            <button className="px-3 py-2 text-xs font-semibold border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors">
+            <button className="px-3 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
               Reveal
             </button>
-            <button className="px-3 py-2 text-xs font-semibold border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors">
+            <button className="px-3 py-2 text-xs font-semibold border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
               Rotate
             </button>
           </div>
@@ -115,23 +115,23 @@ export function SettingsView() {
         <Field label="Webhook URL">
           <input
             defaultValue="https://hooks.salilvnair.com/convengine"
-            className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:border-indigo-400"
+            className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 outline-none focus:border-indigo-400 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100"
           />
         </Field>
       </Section>
 
       {/* Plan */}
       <Section title="Plan &amp; Billing">
-        <div className="flex items-center justify-between p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+          <div className="flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-900 rounded-xl">
           <div>
-            <p className="font-semibold text-indigo-800">Pro Plan</p>
-            <p className="text-xs text-indigo-500 mt-0.5">Renews May 27, 2026 · $299 / mo</p>
+            <p className="font-semibold text-indigo-800 dark:text-indigo-300">Pro Plan</p>
+            <p className="text-xs text-indigo-500 dark:text-indigo-400 mt-0.5">Renews May 27, 2026 · $299 / mo</p>
           </div>
           <button className="px-4 py-1.5 text-xs font-semibold bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
             Manage
           </button>
         </div>
-        <div className="text-sm text-slate-500 space-y-1">
+          <div className="text-sm text-slate-500 dark:text-slate-400 space-y-1">
           <p>✓ Up to 50,000 conversations / month</p>
           <p>✓ Custom renderers &amp; webhooks</p>
           <p>✓ Priority support</p>
