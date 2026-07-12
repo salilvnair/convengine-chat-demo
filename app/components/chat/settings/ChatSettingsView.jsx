@@ -48,7 +48,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     // Preview
     previewDark:     false,
     // Message enrichment
-    messageEnrichment: { mode: 'none', prefix: '', postfix: '', props: {} },
+    messageEnrichment: { prefix: '', suffix: '', inputParams: {} },
     // Stream / SSE / STOMP
     streamEnabled:      false,
     streamTransport:    'sse',
@@ -140,6 +140,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
           <NavDot href="#icons">Custom Icons</NavDot>
           <NavDot href="#renderers">Custom Renderers</NavDot>
           <NavDot href="#actions">Actions API</NavDot>
+          <NavDot href="#enrichment">Message Enrichment</NavDot>
           <NavDot href="#hooks">Hooks</NavDot>
         </nav>
 
@@ -227,8 +228,17 @@ const myRenderer = {
     landingChipsAnchorPadding: 8,               // gap in px (default 8)
     landingChipsOrientation:   'row',           // 'row' | 'column'
     landingChipsShape:         'round',         // 'round' | 'rect'
+    messageEnrichment: {
+      prefix:      '/faq',              // optional — prepended to outgoing text
+      suffix:      '',                  // optional — appended to outgoing text
+      inputParams: { userId: 'u_123' }, // optional — merged into every request
+      preHook:     [],                  // optional — functions run before send
+      postHook:    [],                  // optional — functions run after response
+    },
+    onFeedback: (feedback) => console.log('feedback:', feedback),
     onMessage:  (text) => console.log('user sent:', text),
     onResponse: (text) => console.log('AI replied:', text),
+    onSubmit:   ({ userText, apiText, inputParams }) => console.log('submitting:', apiText, inputParams),
     placeholder: 'Ask ConvEngine…',
     renderers: [myRenderer],
     showAudit:             false,
@@ -1054,6 +1064,44 @@ http.createServer((req, res) => {
               <CodeBlock lang="ts" code={`interface ChatActions {\n  submit(displayText: string, inputParams?: object): void;\n  submitSilent(inputParams: object): void;\n  appendBubble(text: string, role?: 'user' | 'assistant'): void;\n  prefillInput(text: string): void;\n}`} />
               <Tip color="pink" icon="🔁" title="Backward compat">
                 <code className="font-mono text-xs bg-pink-100 dark:bg-pink-900/40 dark:text-pink-200 px-1 rounded">onSubmit</code> is still passed as an alias for <code className="font-mono text-xs bg-pink-100 dark:bg-pink-900/40 dark:text-pink-200 px-1 rounded">actions.submit</code> — old renderers keep working.
+              </Tip>
+            </DocCardBody>
+          </DocCard>
+
+          {/* ── Message Enrichment ── */}
+          <DocCard id="enrichment">
+            <SectionHeader gradient="bg-gradient-to-r from-rose-500 to-orange-500" icon="🧬" title="Message Enrichment" subtitle="Attach metadata to every message, route by prefix, or hook into the send lifecycle — no custom renderer required" />
+            <DocCardBody>
+              <Tip color="violet" icon="📌" title="No mode switch">
+                Every field is optional and independent — <code className="font-mono text-xs bg-violet-100 dark:bg-violet-900/40 dark:text-violet-200 px-1 rounded">prefix</code>/<code className="font-mono text-xs bg-violet-100 dark:bg-violet-900/40 dark:text-violet-200 px-1 rounded">suffix</code> wrap the outgoing text, <code className="font-mono text-xs bg-violet-100 dark:bg-violet-900/40 dark:text-violet-200 px-1 rounded">inputParams</code> merges into every request, and they combine freely. Applies to the plain composer, <code className="font-mono text-xs bg-violet-100 dark:bg-violet-900/40 dark:text-violet-200 px-1 rounded">actions.submit</code>, and <code className="font-mono text-xs bg-violet-100 dark:bg-violet-900/40 dark:text-violet-200 px-1 rounded">actions.submitSilent</code> alike.
+              </Tip>
+
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">1. Attach a user/session ID to every message</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  The common case: your backend needs to know who&apos;s talking without the user ever seeing it in the chat. Since <code className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">config</code> is read fresh on every send, driving <code className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">inputParams</code> from React state means it updates on the very next message — e.g. right after login, with no per-call plumbing.
+                </p>
+                <CodeBlock lang="jsx" code={`function App() {\n  const [userId, setUserId] = useState(null); // set after auth\n\n  return (\n    <ConvEngineChat\n      config={{\n        apiHost: 'https://api.example.com',\n        messageEnrichment: {\n          inputParams: { userId, tenantId: 'acme-co' },\n        },\n      }}\n    />\n  );\n}`} />
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">2. Route power-user commands with a prefix</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Set <code className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">prefix</code> to silently tag every message from a given surface (e.g. a &quot;FAQ mode&quot; toggle) so your backend&apos;s intent router can short-circuit straight to a handler — this demo&apos;s own mock backend does exactly this for <code className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">/faq</code> (see the Playground above).
+                </p>
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    apiHost: 'https://api.example.com',\n    messageEnrichment: {\n      prefix: '/faq',   // "how do refunds work" -> "/faq how do refunds work"\n    },\n  }}\n/>\n\n// Backend: message.startsWith('/faq ') -> route straight to the FAQ skill,\n// skipping general intent classification. User bubble still shows the\n// original text — the prefix is invisible in the UI.`} />
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">3. Refresh an auth token before send, log every turn after</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <code className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">preHook</code> runs sequentially (awaited) right before the request — great for last-mile async work like refreshing a short-lived token. <code className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-1 rounded">postHook</code> runs after the response — great for analytics, without cluttering your component code with tracking calls.
+                </p>
+                <CodeBlock lang="jsx" code={`<ConvEngineChat\n  config={{\n    apiHost: 'https://api.example.com',\n    messageEnrichment: {\n      preHook: [\n        async ({ inputParams }) => {\n          const token = await getFreshAuthToken(); // e.g. refresh if near expiry\n          return { inputParams: { ...inputParams, authToken: token } };\n        },\n      ],\n      postHook: [\n        ({ userText, inputParams, response }) => {\n          analytics.track('chat_message_sent', {\n            length: userText.length,\n            userId: inputParams.userId,\n            confidence: response?.payload?.confidence,\n          });\n        },\n      ],\n    },\n  }}\n/>`} />
+              </div>
+
+              <Tip color="amber" icon="⚠️" title="Side effects only">
+                <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">postHook</code> return values are ignored — use it for logging/analytics/syncing external state, not for transforming the already-delivered response. To transform the outgoing payload, return a partial <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">{'{ userText?, inputParams? }'}</code> from a <code className="font-mono text-xs bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 px-1 rounded">preHook</code> instead.
               </Tip>
             </DocCardBody>
           </DocCard>

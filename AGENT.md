@@ -45,7 +45,7 @@ Primary goals:
 
 When editing conversation handlers:
 - Keep response body compatible with existing frontend parsing (`payload` contract).
-- Preserve message enrichment behavior (text and JSON modes).
+- Preserve message enrichment behavior (`prefix`/`suffix` baked into `message`, `inputParams` merged in as-is — no `mode` switch).
 - Avoid breaking renderer routing assumptions.
 
 ### Keep Examples Honest

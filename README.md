@@ -122,7 +122,7 @@ Flow summary:
 
 Behavior highlights:
 - Accepts `message` and optional `inputParams`.
-- Handles message enrichment modes by extracting clean user text and prefix metadata.
+- Auto-detects a leading `/word` message-enrichment prefix and routes/strips it before matching.
 - Simulates realistic latency (~300-900ms).
 - Returns `payload` compatible with renderer-aware client parsing.
 

@@ -20,30 +20,22 @@ import { VERBOSE_SEQUENCES } from '../../../../data/fake-stream.js';
  *   - object  → JSON.stringified → renderer picks it up by `type`
  *
  * ── Message Enrichment ──────────────────────────────────────────────────────
- * When config.messageEnrichment is active in the widget, the body changes:
+ * When config.messageEnrichment.prefix/suffix is set in the widget, they're
+ * baked directly into `message`: "<prefix> <userText> <suffix>" — the wrapping
+ * happens client-side, so this route always receives a single plain string.
+ * `inputParams` is arbitrary consumer data (e.g. `{ userId }`) merged in via
+ * `messageEnrichment.inputParams` — it carries no routing metadata anymore.
  *
- *   text mode: `message` = "<prefix><userText><postfix>"  (concatenated string)
- *              `inputParams` = {} (empty or renderer's own params)
- *
- *   json mode: `message` = "<userText>"  (original, unmodified)
- *              `inputParams` = { prefix, userText, postfix, ...extraProps }
- *
- * In both cases we extract the original user text and the prefix here so that
- * matchResponse() can route by prefix (/faq, /order, etc.) and match against
- * the clean text — invisible to the user but visible in the audit trail.
+ * We auto-detect a leading "/word" prefix in `message` here so matchResponse()
+ * can route by prefix (/faq, /order, etc.) and match against the clean text —
+ * invisible to the user but visible in the audit trail.
  */
 export async function POST(request) {
   const body = await request.json();
   const { message, inputParams, conversationId } = body;
 
-  // JSON enrichment mode: inputParams.userText carries the original user text,
-  // inputParams.prefix carries the routing prefix.
-  // Text enrichment mode: the prefix is embedded at the start of message.
-  // No enrichment: message is the raw user text.
-  const cleanMessage  = inputParams?.userText ?? message ?? '';
+  const cleanMessage  = message ?? '';
   const enrichOptions = {
-    prefix:      inputParams?.prefix  ?? '',
-    postfix:     inputParams?.postfix ?? '',
     inputParams: inputParams ?? {},
   };
 

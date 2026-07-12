@@ -345,7 +345,7 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
     agentIconBg:           { light: '', dark: '' },
     agentIconColor:        { light: '', dark: '' },
     previewDark:           false,
-    messageEnrichment:     { mode: 'none', prefix: '', postfix: '', props: {} },
+    messageEnrichment:     { prefix: '', suffix: '', inputParams: {} },
     streamEnabled:         false,
     streamTransport:       'sse',
     showTransportBadge:    false,
@@ -439,7 +439,11 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
             composerShape:         chatSettings.composerShape,
             icons:                 iconComponents,
             renderers:             interactiveRenderers,
-            messageEnrichment:     chatSettings.messageEnrichment?.mode !== 'none' ? chatSettings.messageEnrichment : undefined,
+            messageEnrichment:     (chatSettings.messageEnrichment?.prefix
+                                      || chatSettings.messageEnrichment?.suffix
+                                      || Object.keys(chatSettings.messageEnrichment?.inputParams ?? {}).length)
+              ? chatSettings.messageEnrichment
+              : undefined,
             stream:                chatSettings.streamEnabled
               ? { enabled: true, transport: chatSettings.streamTransport ?? 'sse' }
               : undefined,

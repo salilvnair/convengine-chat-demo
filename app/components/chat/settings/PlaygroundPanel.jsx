@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CodeBlock }        from './ui/CodeBlock.jsx';
 import { JsonEditorField }  from './ui/JsonEditorField.jsx';
 import { Toggle }           from './ui/Toggle.jsx';
@@ -10,30 +10,20 @@ import { ColorGrid }        from './ColorSection.jsx';
 import { IconGrid, DEFAULT_ICON_SVGS, ICON_META } from './IconSection.jsx';
 
 function buildEnrichmentSnippet(enrich) {
-  if (!enrich || enrich.mode === 'none') return null;
-  const { mode, prefix, postfix, props = {} } = enrich;
-  const propEntries = Object.entries(props).filter(([, v]) => String(v).trim() !== '');
-  if (mode === 'text') {
-    if (!prefix && !postfix) return null;
-    const lines = ['    messageEnrichment: {', `      mode: "text",`];
-    if (prefix)  lines.push(`      prefix: ${JSON.stringify(prefix)},`);
-    if (postfix) lines.push(`      postfix: ${JSON.stringify(postfix)},`);
-    lines.push('    },');
-    return lines.join('\n');
+  if (!enrich) return null;
+  const { prefix = '', suffix = '', inputParams = {} } = enrich;
+  const paramEntries = Object.entries(inputParams).filter(([, v]) => String(v).trim() !== '');
+  if (!prefix && !suffix && !paramEntries.length) return null;
+  const lines = ['    messageEnrichment: {'];
+  if (prefix) lines.push(`      prefix: ${JSON.stringify(prefix)},`);
+  if (suffix) lines.push(`      suffix: ${JSON.stringify(suffix)},`);
+  if (paramEntries.length) {
+    lines.push('      inputParams: {');
+    paramEntries.forEach(([k, v]) => lines.push(`        ${k}: ${JSON.stringify(v)},`));
+    lines.push('      },');
   }
-  if (mode === 'json') {
-    const lines = ['    messageEnrichment: {', `      mode: "json",`];
-    if (prefix)  lines.push(`      prefix: ${JSON.stringify(prefix)},`);
-    if (postfix) lines.push(`      postfix: ${JSON.stringify(postfix)},`);
-    if (propEntries.length) {
-      lines.push('      props: {');
-      propEntries.forEach(([k, v]) => lines.push(`        ${k}: ${JSON.stringify(v)},`));
-      lines.push('      },');
-    }
-    lines.push('    },');
-    return lines.join('\n');
-  }
-  return null;
+  lines.push('    },');
+  return lines.join('\n');
 }
 
 function buildGeneratedCode(settings, iconSvgs) {
@@ -141,107 +131,75 @@ function buildGeneratedCode(settings, iconSvgs) {
   return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n${lines.join('\n')}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
 }
 
-function MessageEnrichmentSection({ enrich, onChange, accentColor }) {
-  const { mode, prefix, postfix, props = {} } = enrich;
+function MessageEnrichmentSection({ enrich, onChange }) {
+  const { prefix = '', suffix = '', inputParams = {} } = enrich;
 
-  const [propsJson, setPropsJson] = useState(() => JSON.stringify(props, null, 2));
+  const [paramsJson, setParamsJson] = useState(() => JSON.stringify(inputParams, null, 2));
 
-  // Reset editor when mode is cleared to none
-  useEffect(() => {
-    if (mode === 'none') { setPropsJson('{}'); }
-  }, [mode]);
-
-  const btnBase = 'px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all';
-  const activeStyle = { backgroundColor: accentColor, borderColor: accentColor };
-
-  function setMode(m) {
-    onChange({ ...enrich, mode: m });
-    if (m === 'none') { setPropsJson('{}'); }
-  }
-
-  function handlePropsChange(raw) {
-    setPropsJson(raw);
+  function handleParamsChange(raw) {
+    setParamsJson(raw);
     try {
       const parsed = JSON.parse(raw);
       if (typeof parsed === 'object' && !Array.isArray(parsed)) {
-        onChange({ ...enrich, props: parsed });
+        onChange({ ...enrich, inputParams: parsed });
       }
     } catch { /* editor shows its own error */ }
   }
 
-  // For the preview
-  const safeProps = props;
-
   const textFields = [
-    { key: 'prefix',  label: 'Prefix',  hint: 'messageEnrichment.prefix',  placeholder: 'e.g. /faq ' },
-    { key: 'postfix', label: 'Postfix', hint: 'messageEnrichment.postfix', placeholder: 'e.g.  [END]' },
+    { key: 'prefix', label: 'Prefix', hint: 'messageEnrichment.prefix', placeholder: 'e.g. /faq ' },
+    { key: 'suffix', label: 'Suffix', hint: 'messageEnrichment.suffix', placeholder: 'e.g.  [END]' },
   ];
+
+  const hasContent = prefix.trim() || suffix.trim() || Object.keys(inputParams).length > 0;
 
   return (
     <div className="space-y-3">
       <div>
         <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Message Enrichment</p>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-          Prefix/postfix are sent to the backend only — invisible in chat UI, visible in audit panel.
+          Every field below is optional and independent — no mode switch. Prefix/suffix wrap the outgoing text, inputParams is merged into every request. Invisible in chat UI, visible in the audit panel.
         </p>
       </div>
 
-      {/* Mode selector */}
-      <div className="flex gap-2 flex-wrap">
-        {[
-          { id: 'none', label: '— None' },
-          { id: 'text', label: 'T  Text mode' },
-          { id: 'json', label: '{ }  JSON mode' },
-        ].map(({ id, label }) => (
-          <button key={id} onClick={() => setMode(id)}
-            className={`${btnBase} ${mode === id ? 'text-white shadow-md' : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
-            style={mode === id ? activeStyle : {}}
-          >{label}</button>
+      <div className="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-700/40 p-4 space-y-3">
+
+        {/* Prefix + Suffix — stacked label/hint above input to avoid overflow */}
+        {textFields.map(({ key, label, hint, placeholder }) => (
+          <div key={key} className="space-y-1">
+            <div className="flex items-baseline gap-2">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{label}</p>
+              <p className="text-[10px] text-slate-400 font-mono">config.{hint}</p>
+            </div>
+            <input
+              type="text"
+              value={enrich[key] ?? ''}
+              placeholder={placeholder}
+              onChange={(e) => onChange({ ...enrich, [key]: e.target.value })}
+              className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-mono bg-white dark:bg-slate-700 dark:text-slate-100 bg-white"
+            />
+          </div>
         ))}
-      </div>
 
-      {mode !== 'none' && (
-        <div className="rounded-xl border border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-700/40 p-4 space-y-3">
+        {/* Input params — always available, no mode gate */}
+        <div className="space-y-1.5">
+          <div>
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Input params</p>
+            <p className="text-[10px] text-slate-400 font-mono mt-0.5">config.messageEnrichment.inputParams</p>
+          </div>
+          <JsonEditorField
+            value={paramsJson}
+            onChange={handleParamsChange}
+            placeholder={'{\n  "context": "dashboard",\n  "userId": "u_123"\n}'}
+            minHeight="120px"
+          />
+        </div>
 
-          {/* Prefix + Postfix — stacked label/hint above input to avoid overflow */}
-          {textFields.map(({ key, label, hint, placeholder }) => (
-            <div key={key} className="space-y-1">
-              <div className="flex items-baseline gap-2">
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{label}</p>
-                <p className="text-[10px] text-slate-400 font-mono">config.{hint}</p>
-              </div>
-              <input
-                type="text"
-                value={enrich[key] ?? ''}
-                placeholder={placeholder}
-                onChange={(e) => onChange({ ...enrich, [key]: e.target.value })}
-                className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-mono bg-white dark:bg-slate-700 dark:text-slate-100 bg-white"
-              />
-            </div>
-          ))}
-
-          {/* JSON mode — CodeMirror editor for props */}
-          {mode === 'json' && (
-            <div className="space-y-1.5">
-              <div>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Additional props</p>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">config.messageEnrichment.props</p>
-              </div>
-              <JsonEditorField
-                value={propsJson}
-                onChange={handlePropsChange}
-                placeholder={'{\n  "context": "dashboard",\n  "userId": "u_123"\n}'}
-                minHeight="120px"
-              />
-            </div>
-          )}
-
-          {/* Preview banner */}
+        {/* Preview banner */}
+        {hasContent && (
           <div className="rounded-lg bg-white dark:bg-slate-800 border border-dashed border-slate-200 dark:border-slate-600 px-3 py-2 space-y-2">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                {mode === 'text' ? 'Reaches backend — message string' : 'Reaches backend — inputParams object'}
-              </p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reaches backend</p>
               <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2 py-0.5">
                 <svg viewBox="0 0 12 12" className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <circle cx="6" cy="6" r="5"/><path d="M6 4v3M6 8.5v.5"/>
@@ -249,25 +207,24 @@ function MessageEnrichmentSection({ enrich, onChange, accentColor }) {
                 invisible in UI · audit panel only
               </span>
             </div>
-            {mode === 'text' ? (
-              <code className="block text-xs text-indigo-600 break-all">
-                &quot;{prefix.trim() ? prefix.trim() + '\u00a0' : ''}<span className="text-slate-400 italic">&lt;user text&gt;</span>{postfix.trim() ? '\u00a0' + postfix.trim() : ''}&quot;
-              </code>
-            ) : (
+            <code className="block text-xs text-indigo-600 break-all">
+              message: &quot;{prefix.trim() ? prefix.trim() + '\u00a0' : ''}<span className="text-slate-400 italic">&lt;user text&gt;</span>{suffix.trim() ? '\u00a0' + suffix.trim() : ''}&quot;
+            </code>
+            {Object.keys(inputParams).length > 0 && (
               <code className="block text-xs text-indigo-600 whitespace-pre-wrap break-all">
-                {JSON.stringify(
-                  { prefix: prefix || '', userText: '<user text>', postfix: postfix || '', ...safeProps },
-                  null, 2,
-                )}
+                inputParams: {JSON.stringify(inputParams, null, 2)}
               </code>
             )}
             <p className="text-[10px] text-slate-400">
               User bubble shows: <span className="font-mono italic">&ldquo;&lt;user text&gt;&rdquo;</span> — original text, no enrichment.
             </p>
           </div>
+        )}
 
-        </div>
-      )}
+        <p className="text-[10px] text-slate-400 leading-relaxed border-t border-dashed border-slate-200 dark:border-slate-600 pt-2">
+          <span className="font-mono">preHook</span> / <span className="font-mono">postHook</span> (arrays of functions, run sequentially before/after each request) are code-only — set them directly on your <span className="font-mono">config.messageEnrichment</span> object; not editable from this playground.
+        </p>
+      </div>
     </div>
   );
 }
@@ -899,9 +856,8 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
 
         {/* Message Enrichment */}
         <MessageEnrichmentSection
-          enrich={settings.messageEnrichment ?? { mode: 'none', prefix: '', postfix: '', props: {} }}
+          enrich={settings.messageEnrichment ?? { prefix: '', suffix: '', inputParams: {} }}
           onChange={(enrich) => onChange({ ...settings, messageEnrichment: enrich })}
-          accentColor={settings.accentColor}
         />
 
         <hr className="border-slate-100 dark:border-slate-700" />

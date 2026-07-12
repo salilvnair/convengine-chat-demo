@@ -117,16 +117,15 @@ const FORM_SUBMIT_RESPONSES = [
 
 /**
  * Known enrichment prefixes and the handlers they map to.
- * A prefix set via config.messageEnrichment routes the message to a specific
- * handler before the normal matching stages run — invisible to the user, but
- * visible in the backend and the audit trail.
+ * A prefix set via config.messageEnrichment.prefix routes the message to a
+ * specific handler before the normal matching stages run — invisible to the
+ * user, but visible in the backend and the audit trail.
  *
- * text mode  — prefix is embedded in the message string ("/faq tell me about pro")
- *              and stripped before Stage 1+ matching runs.
- * json mode  — prefix arrives in options.prefix, message is already clean.
+ * The prefix is baked into the message string client-side ("/faq tell me about pro")
+ * and stripped here before Stage 1+ matching runs.
  *
  * Handlers receive (cleanInput, options, enrichMeta) where enrichMeta is pre-built
- * by matchResponse using the fully-resolved activePrefix (covers both text and json mode).
+ * by matchResponse using the resolved prefix/suffix.
  */
 const ENRICHMENT_PREFIX_HANDLERS = {
   '/faq':   (cleanInput, _options, enrichMeta) => buildFaqResponsePayloadFromFakeChat(cleanInput, 3, enrichMeta),
@@ -150,41 +149,30 @@ const ENRICHMENT_PREFIX_HANDLERS = {
 /**
  * Match a user message to the best response in fake-chat.json.
  *
- * @param   {string} input                    Raw user message (or clean text from JSON enrichment)
- * @param   {{ prefix?: string, postfix?: string, inputParams?: object }} [options]
- *          Enrichment context forwarded from the API route:
- *            prefix  — the enrichment prefix (e.g. "/faq"), already stripped from `input`
- *                      in json mode; still embedded in `input` in text mode.
- *            postfix — the enrichment postfix (informational only, not used for routing)
+ * @param   {string} input                    Raw user message — prefix/suffix already
+ *                                              baked in by the client if configured.
+ * @param   {{ inputParams?: object }} [options]
+ *          Enrichment context forwarded from the API route. `inputParams` is
+ *          arbitrary consumer data — carries no routing metadata.
  * @returns {string|object}  Agent response (string or renderer-payload object)
  */
 export function matchResponse(input, options = {}) {
   // ── Resolve enrichment prefix ─────────────────────────────────────────────
-  // JSON mode: prefix arrives cleanly in options.prefix, input is already stripped.
-  // Text mode: prefix is embedded at the start of input ("/<cmd> <text>").
-  //            We detect it, strip it, and use the clean text for matching.
+  // The prefix is embedded at the start of input ("/<cmd> <text>") by the client
+  // when config.messageEnrichment.prefix is set. We detect it, strip it, and
+  // use the clean text for matching.
   let cleanInput  = input;
-  let activePrefix = (options.prefix ?? '').trim().toLowerCase();
+  let activePrefix = '';
 
-  if (!activePrefix) {
-    // Text mode: auto-detect /word prefix at start of input
-    const prefixMatch = input.match(/^(\/[a-z]+)\s+/i);
-    if (prefixMatch) {
-      activePrefix = prefixMatch[1].toLowerCase();
-      cleanInput   = input.slice(prefixMatch[0].length).trim();
-    }
+  const prefixMatch = input.match(/^(\/[a-z]+)\s+/i);
+  if (prefixMatch) {
+    activePrefix = prefixMatch[1].toLowerCase();
+    cleanInput   = input.slice(prefixMatch[0].length).trim();
   }
 
   // ── Stage 0-pre: Enrichment prefix routing ────────────────────────────────
   if (activePrefix && ENRICHMENT_PREFIX_HANDLERS[activePrefix]) {
-    // Build enrichMeta here — activePrefix is fully resolved for both text and json mode.
-    // In text mode options.prefix is empty (prefix was baked into the message string),
-    // so we use activePrefix directly. In json mode options.prefix already has it.
-    const isJsonMode = options?.inputParams?.userText !== undefined;
-    const resolvedPostfix = (options?.postfix ?? '').trim();
-    const enrichMeta = (activePrefix || resolvedPostfix)
-      ? { mode: isJsonMode ? 'json' : 'text', prefix: activePrefix, postfix: resolvedPostfix }
-      : null;
+    const enrichMeta = { prefix: activePrefix };
     const result = ENRICHMENT_PREFIX_HANDLERS[activePrefix](cleanInput, options, enrichMeta);
     if (result != null) return result;
   }

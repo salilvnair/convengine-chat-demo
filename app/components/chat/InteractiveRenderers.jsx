@@ -592,7 +592,7 @@ function FAQResponseComponent({ payload }) {
         </div>
       )}
 
-      {/* enrichment metadata — only shown when prefix/postfix were active */}
+      {/* enrichment metadata — only shown when prefix/suffix were active */}
       {enrichment && (
         <div style={{
           background: 'var(--ce-surface-2, #f8fafc)',
@@ -604,19 +604,14 @@ function FAQResponseComponent({ payload }) {
             Enrichment · backend only
           </span>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {enrichment.mode && (
-              <span style={{ fontSize: '0.65rem', fontWeight: 600, background: '#ede9fe', color: '#5b21b6', border: '1px solid #ddd6fe', borderRadius: 999, padding: '1px 7px' }}>
-                mode: {enrichment.mode}
-              </span>
-            )}
             {enrichment.prefix && (
               <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 7px' }}>
                 prefix: &quot;{enrichment.prefix}&quot;
               </span>
             )}
-            {enrichment.postfix && (
+            {enrichment.suffix && (
               <span style={{ fontSize: '0.65rem', fontFamily: 'monospace', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', borderRadius: 4, padding: '1px 7px' }}>
-                postfix: &quot;{enrichment.postfix}&quot;
+                suffix: &quot;{enrichment.suffix}&quot;
               </span>
             )}
           </div>
