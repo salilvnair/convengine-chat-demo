@@ -265,6 +265,9 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
     showDarkModeLightMode: true,
     accentColor:           '#6366f1',
   });
+  // v1.1: a neat (sm) widget that starts with a generic on-load reply pill —
+  // e.g. the app deep-linked the user in "asking about" a dashboard metric.
+  const [demoReply, setDemoReply] = useState(true);
 
   const resolvedMode  = chatMode === 'fullscreen' ? 'fullscreen' : chatMode.startsWith('sidepanel') ? 'sidepanel' : 'panel';
   const resolvedAlign = chatMode === 'sidepanel-left' ? 'left' : 'right';
@@ -287,12 +290,15 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
         {activeTab === 'Profile'    && <ProfileView />}
       </AppShell>
 
-      {/* Chat widget */}
+      {/* Chat widget — draggable orb: drag the FAB anywhere on the page, it
+          snaps to the nearest edge on release (iOS AssistiveTouch style). */}
       {resolvedMode !== 'fullscreen' && (
         <ConvEngineChat
           mode={resolvedMode}
           position="bottom"
           align={resolvedAlign}
+          draggable={resolvedMode === 'panel'}
+          size="sm"
           onModeChange={(m) => setChatMode(m === 'fullscreen' ? 'panel' : m)}
           config={{
             apiHost:               '',
@@ -302,6 +308,11 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
             showFeedback:          chatSettings.showFeedback,
             showDarkModeLightMode: chatSettings.showDarkModeLightMode,
             defaultDark:           darkMode,
+            // On-load reply pill — a generic "asking about" context the host app
+            // pre-loads; also demonstrates showBubbleReply (↩ on AI replies).
+            replyContext:          demoReply
+              ? { label: 'Asking about', text: 'the Q4 revenue report', onClear: () => setDemoReply(false) }
+              : null,
             renderers:             interactiveRenderers,
           }}
           theme={{
@@ -323,6 +334,13 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
     showAudit:             false,
     showDarkModeLightMode: true,
     accentColor:           '#6366f1',
+    // v1.1: keep these in sync with ChatSettingsView's defaults so the initial
+    // widget matches the initial Generated Usage before any toggle is touched.
+    size:                  'sm',
+    showBubbleReply:       true,
+    replyPill:             true,
+    replyPillLabel:        'Asking about',
+    replyPillText:         'the Q4 revenue report',
     title:                 'ConvEngine Assistant',
     subtitle:              "Ask me anything — I'll do my best to help.",
     placeholder:           'Ask ConvEngine…',
@@ -333,6 +351,9 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
     showLayoutPicker:      true,
     showMaximize:          true,
     showMinimize:          true,
+    draggableOrb:          false,
+    orbMovement:           'edgeSnap',
+    orbAnimation:          'bubblegum',
     bubbleUserBg:          { light: '', dark: '' },
     bubbleUserText:        { light: '', dark: '' },
     bubbleAgentBg:         { light: '', dark: '' },
@@ -373,6 +394,17 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
   const [iconComponents, setIconComponents] = useState({});
   const chatActionsRef = useRef(null);
 
+  // v1.1: `size` and the on-load reply pill are now driven by the playground
+  // settings (so the Generated Usage snippet stays in sync). A generic
+  // "asking about <topic>" example — swap the text in the Reply section.
+  const replyContext = chatSettings.replyPill
+    ? {
+        label: chatSettings.replyPillLabel || 'Asking about',
+        text:  chatSettings.replyPillText || '',
+        onClear: () => setChatSettings((s) => ({ ...s, replyPill: false })),
+      }
+    : null;
+
   // Sync previewDark with app-level dark mode
   useEffect(() => {
     setChatSettings((s) => ({ ...s, previewDark: darkMode }));
@@ -407,10 +439,16 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
           mode={resolvedMode}
           position="bottom"
           align={resolvedAlign}
+          size={chatSettings.size ?? 'sm'}
+          draggable={resolvedMode === 'panel' && !!chatSettings.draggableOrb}
           actionsRef={chatActionsRef}
           onModeChange={(m) => setChatMode(m === 'fullscreen' ? 'panel' : m)}
           config={{
             apiHost:               '',
+            replyContext,
+            orbMovement:           chatSettings.orbMovement ?? 'edgeSnap',
+            orbAnimation:          chatSettings.orbAnimation ?? 'bubblegum',
+            showBubbleReply:       chatSettings.showBubbleReply !== false,
             title:                 chatSettings.title,
             subtitle:              chatSettings.subtitle,
             placeholder:           chatSettings.placeholder,
@@ -424,6 +462,9 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
             showLayoutPicker:      chatSettings.showLayoutPicker,
             showMaximize:          chatSettings.showMaximize,
             showMinimize:          chatSettings.showMinimize,
+            // v1.2: layout picker gains "Fullscreen (new tab)" → opens the demo's
+            // /fullscreen route in a new browser tab for breathing room.
+            fullscreenTabUrl:      `/fullscreen?accent=${encodeURIComponent(chatSettings.accentColor)}`,
             defaultDark:           darkMode || chatSettings.previewDark,
             bubbleUserBg:          chatSettings.bubbleUserBg,
             bubbleUserText:        chatSettings.bubbleUserText,
