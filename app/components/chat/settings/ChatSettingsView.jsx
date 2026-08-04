@@ -18,7 +18,15 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     showEngineStatus:      true,
     showDarkModeLightMode: true,
     chatMode:              'panel',
+    size:                  'sm',
     accentColor:           '#6366f1',
+    // Reply-to-message (v1.1): showBubbleReply = the ↩ on assistant bubbles;
+    // replyPill = an on-load config.replyContext demo (a quoted "asking about"
+    // chip pinned in the composer when the chat starts).
+    showBubbleReply:       true,
+    replyPill:             true,
+    replyPillLabel:        'Asking about',
+    replyPillText:         'the Q4 revenue report',
     // Text
     title:       'ConvEngine Assistant',
     subtitle:    "Ask me anything \u2014 I'll do my best to help.",
@@ -39,6 +47,10 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     showLayoutPicker:  true,
     showMaximize:      true,
     showMinimize:      true,
+    // Draggable orb (panel mode) — iOS AssistiveTouch-style movable FAB
+    draggableOrb:      false,
+    orbMovement:       'edgeSnap',
+    orbAnimation:      'bubblegum',
     // Color overrides — { light, dark } like iOS Color Assets
     bubbleUserBg:    { light: '', dark: '' },
     bubbleUserText:  { light: '', dark: '' },
@@ -221,10 +233,14 @@ const myRenderer = {
   mode="panel"
   position="bottom"
   align="right"
+  draggable      // movable orb — drag anywhere, snaps to nearest edge (iOS AssistiveTouch style)
   onModeChange={(newMode) => console.log('mode changed to', newMode)}
   config={{
     apiHost:        'http://localhost:8080',
     conversationId: undefined,
+    orbMovement:        'edgeSnap',  // 'edgeSnap' snaps to nearest edge | 'freeform' stays anywhere it's dropped
+    orbAnimation:       'bubblegum', // 'none' | 'bubblegum' | 'smooth' | 'glide' | 'spring' | 'elastic' | 'rubberband' | 'jelly' | 'wobble' | 'pop' | 'magnetic'
+    persistOrbPosition: true,       // remember the orb's dropped position across reloads
     icons: { ChatBubbleIcon: MyFabIcon },
     landingChips: [
       { chipText: "📊 Activity",  chatText: "Show my recent account activity" },
@@ -294,6 +310,7 @@ const myRenderer = {
                 <PropRow prop="mode"         type='"panel"|"fullscreen"|"sidepanel"' defaultVal='"panel"'    description='Rendering mode. panel = floating FAB card, fullscreen = fills parent, sidepanel = full-height edge drawer.' />
                 <PropRow prop="position"     type='"bottom"|"top"'                  defaultVal='"bottom"'   description='Vertical anchor for panel mode FAB and card.' />
                 <PropRow prop="align"        type='"right"|"left"'                  defaultVal='"right"'    description='Horizontal anchor for panel mode and sidepanel side.' />
+                <PropRow prop="draggable"    type='boolean'                         defaultVal='false'      description='Panel mode only. Turns the FAB into a free-floating orb the user can drag anywhere on the page. The panel re-anchors next to the orb. See config.orbMovement / config.orbAnimation / config.persistOrbPosition.' />
                 <PropRow prop="config"       type='object'                          defaultVal='{}'         description='Configuration bag — see config Object below.' />
                 <PropRow prop="theme"        type='object'                          defaultVal='{}'         description='CSS custom-property overrides. Keys auto-prefixed with --ce-.' />
                 <PropRow prop="onModeChange" type='function'                        defaultVal='undefined'  description='Called with the new mode string when the user switches mode from the header picker.' />
@@ -312,6 +329,7 @@ const myRenderer = {
                 {/* ── A ── */}
                 <PropRow prop="agentIconBg"            type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar background. Defaults to a transparent tint of the agent bubble bg. Overrides --ce-avatar-agent-bg.' />
                 <PropRow prop="agentIconColor"         type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar icon/text color. Defaults to solid bubbleAgentBg when set; otherwise secondary text color. Overrides --ce-avatar-agent-color.' />
+                <PropRow id="config-orbAnimation"      prop="orbAnimation"    type='"none"|"bubblegum"|"smooth"|"glide"|"spring"|"elastic"|"rubberband"|"jelly"|"wobble"|"pop"|"magnetic"' defaultVal='"bubblegum"' description='Panel mode + draggable prop only. Named drag/snap animation style for the orb. "none" disables all animation for an instant, non-animated reposition.' />
                 <PropRow prop="apiEndpoints"           type='object'   defaultVal='undefined'     description='Override individual endpoint paths. Keys: message, feedback, audit. Each is a path ("/api/v1/message") or full URL. Unspecified keys fall back to {apiHost}/api/v1/conversation/{name}. See Backend Routes section.' />
                 <PropRow prop="apiHost"                type='string'   defaultVal='""'            description='Base URL of your backend. Omit for same-origin servers. Pass a full URL (e.g. "http://localhost:8080") for a separate backend.' />
                 {/* ── B ── */}
@@ -335,8 +353,11 @@ const myRenderer = {
                 {/* ── O ── */}
                 <PropRow prop="onMessage"              type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
                 <PropRow prop="onResponse"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
+                <PropRow prop="orbMovement"            type='"edgeSnap"|"freeform"' defaultVal='"edgeSnap"' description='Panel mode + draggable prop only. "edgeSnap" snaps the orb to the nearest left/right edge on release. "freeform" leaves it exactly where dropped — anywhere on the page.' />
+                <PropRow prop="orbStorageKey"          type='string'   defaultVal='"ce-chat-orb-pos"' description='Panel mode + draggable prop only. localStorage key used to persist the orb’s dropped position — customize if you render multiple draggable widgets on one page.' />
                 {/* ── P ── */}
                 <PropRow prop="panelBg"                type='string | { light, dark }'  defaultVal='undefined'  description='Chat panel background color. Overrides --ce-bg-panel.' />
+                <PropRow prop="persistOrbPosition"     type='boolean'  defaultVal='true'  description='Panel mode + draggable prop only. Remembers the orb’s last dropped position across reloads via localStorage.' />
                 <PropRow prop="placeholder"            type='string'   defaultVal='"Ask ConvEngine…"'  description='Composer input placeholder text.' />
                 {/* ── R ── */}
                 <PropRow prop="renderers"              type='Array'    defaultVal='[]'       description='Custom renderer providers injected before built-ins.' />

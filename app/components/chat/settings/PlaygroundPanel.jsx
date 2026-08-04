@@ -9,6 +9,25 @@ import { ColorPicker }      from './ColorPicker.jsx';
 import { ColorGrid }        from './ColorSection.jsx';
 import { IconGrid, DEFAULT_ICON_SVGS, ICON_META } from './IconSection.jsx';
 
+const ORB_ANIMATIONS = [
+  { id: 'none',       label: 'None' },
+  { id: 'bubblegum',  label: '🍬 Bubblegum' },
+  { id: 'smooth',     label: '〰️ Smooth' },
+  { id: 'glide',      label: '🛩️ Glide' },
+  { id: 'spring',     label: '🌀 Spring' },
+  { id: 'elastic',    label: '🎯 Elastic' },
+  { id: 'rubberband', label: '🪀 Rubberband' },
+  { id: 'jelly',      label: '🍮 Jelly' },
+  { id: 'wobble',     label: '🫨 Wobble' },
+  { id: 'pop',        label: '🎈 Pop' },
+  { id: 'magnetic',   label: '🧲 Magnetic' },
+];
+
+const ORB_MOVEMENTS = [
+  { id: 'edgeSnap', label: '📌 Edge Snap',   hint: 'Snaps to the nearest left/right edge on release' },
+  { id: 'freeform',  label: '✋ Freeform', hint: 'Stays exactly wherever it’s dropped, anywhere on the page' },
+];
+
 function buildEnrichmentSnippet(enrich) {
   if (!enrich) return null;
   const { prefix = '', suffix = '', inputParams = {} } = enrich;
@@ -30,6 +49,8 @@ function buildGeneratedCode(settings, iconSvgs) {
   const m    = settings.chatMode;
   const mode = m === 'fullscreen' ? 'fullscreen' : m.startsWith('sidepanel') ? 'sidepanel' : 'panel';
   const align = m.startsWith('sidepanel') ? `\n  align="${m === 'sidepanel-left' ? 'left' : 'right'}"` : '';
+  const sizeProp = `\n  size="${settings.size ?? 'md'}"`;
+  const draggableProp = (mode === 'panel' && settings.draggableOrb) ? `\n  draggable` : '';
 
   const COLOR_KEYS = [
     'bubbleUserBg','bubbleUserText','bubbleAgentBg','bubbleAgentText',
@@ -61,6 +82,9 @@ function buildGeneratedCode(settings, iconSvgs) {
     !settings.showLayoutPicker    ? `    showLayoutPicker: false,`    : null,
     !settings.showMaximize        ? `    showMaximize: false,`        : null,
     !settings.showMinimize        ? `    showMinimize: false,`        : null,
+    (settings.draggableOrb && (settings.orbMovement ?? 'edgeSnap') !== 'edgeSnap') ? `    orbMovement: "${settings.orbMovement}",` : null,
+    (settings.draggableOrb && (settings.orbAnimation ?? 'bubblegum') !== 'bubblegum') ? `    orbAnimation: "${settings.orbAnimation}",` : null,
+    settings.showBubbleReply === false ? `    showBubbleReply: false,`  : null,
     settings.composerShape === 'rect' ? `    composerShape: 'rect',`  : null,
     // Time & Date
     settings.showBubbleTime   ? `    showBubbleTime: true,`    : null,
@@ -89,6 +113,16 @@ function buildGeneratedCode(settings, iconSvgs) {
       lines.push(`      // custom ${k} \u2014 replace with your React component`);
       lines.push(`      ${k}: My${k},`);
     });
+    lines.push(`    },`);
+  }
+
+  // Reply pill on load (config.replyContext) — a quoted "asking about" chip
+  // pinned in the composer when the chat starts; its text also rides to the
+  // backend as inputParams.replySourceText on the next send.
+  if (settings.replyPill) {
+    lines.push(`    replyContext: {`);
+    lines.push(`      label: ${JSON.stringify(settings.replyPillLabel || 'Asking about')},`);
+    lines.push(`      text: ${JSON.stringify(settings.replyPillText || '')},`);
     lines.push(`    },`);
   }
 
@@ -134,7 +168,7 @@ function buildGeneratedCode(settings, iconSvgs) {
     }
   }
 
-  return `<ConvEngineChat\n  mode="${mode}"${align}\n  config={{\n${lines.join('\n')}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
+  return `<ConvEngineChat\n  mode="${mode}"${align}${sizeProp}${draggableProp}\n  config={{\n${lines.join('\n')}\n  }}\n  theme={{ "color-accent": "${settings.accentColor}" }}\n/>`;
 }
 
 function MessageEnrichmentSection({ enrich, onChange }) {
@@ -510,10 +544,11 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
           <Toggle checked={settings.showHeaderDot}            onChange={(v) => onChange({ ...settings, showHeaderDot: v })}            label="Header Dot"             hint="config.showHeaderDot"         modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showHeaderDot')} />
           <Toggle checked={settings.showLandingAvatar}        onChange={(v) => onChange({ ...settings, showLandingAvatar: v })}        label="Landing Avatar"         hint="config.showLandingAvatar"     modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showLandingAvatar')} />
           <Toggle checked={settings.showLandingSubtitle}      onChange={(v) => onChange({ ...settings, showLandingSubtitle: v })}      label="Landing Subtitle"       hint="config.showLandingSubtitle"   modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showLandingSubtitle')} />
-          {showFor('panel','fullscreen') && <Toggle checked={settings.showNewChat}       onChange={(v) => onChange({ ...settings, showNewChat: v })}       label="New Chat Button"    hint="config.showNewChat"      modes={['panel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showNewChat')} />}
-          {showFor('panel') && <Toggle checked={settings.showLayoutPicker} onChange={(v) => onChange({ ...settings, showLayoutPicker: v })}  label="Chat View Switcher" hint="config.showLayoutPicker" modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showLayoutPicker')} />}
-          {showFor('panel') && <Toggle checked={settings.showMaximize}     onChange={(v) => onChange({ ...settings, showMaximize: v })}      label="Expand to Center"   hint="config.showMaximize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMaximize')} />}
-          {showFor('panel') && <Toggle checked={settings.showMinimize}     onChange={(v) => onChange({ ...settings, showMinimize: v })}      label="Minimize Button"    hint="config.showMinimize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMinimize')} />}
+          {/* Always visible so every flag is togglable; the mode badges say where each applies. */}
+          <Toggle checked={settings.showNewChat}       onChange={(v) => onChange({ ...settings, showNewChat: v })}       label="New Chat Button"    hint="config.showNewChat"      modes={['panel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showNewChat')} />
+          <Toggle checked={settings.showLayoutPicker} onChange={(v) => onChange({ ...settings, showLayoutPicker: v })}  label="Chat View Switcher" hint="config.showLayoutPicker" modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showLayoutPicker')} />
+          <Toggle checked={settings.showMaximize}     onChange={(v) => onChange({ ...settings, showMaximize: v })}      label="Expand to Center"   hint="config.showMaximize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMaximize')} />
+          <Toggle checked={settings.showMinimize}     onChange={(v) => onChange({ ...settings, showMinimize: v })}      label="Minimize Button"    hint="config.showMinimize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMinimize')} />
           <Toggle checked={settings.showTransportBadge ?? false} onChange={(v) => onChange({ ...settings, showTransportBadge: v })} label="Transport Badge in Header" hint="config.showTransportBadge" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showTransportBadge')} />
         </div>
 
@@ -928,6 +963,61 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
           </div>
         </div>
 
+        {/* Draggable Orb — FAB Panel only */}
+        {settings.chatMode === 'panel' && (
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Draggable Orb</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                iOS AssistiveTouch-style FAB — drag it anywhere on the page, it snaps to the nearest edge on release. The chat panel re-anchors next to wherever it lands.
+              </p>
+            </div>
+            <Toggle
+              label="Draggable orb"
+              hint="draggable"
+              checked={settings.draggableOrb ?? false}
+              onChange={(v) => onChange({ ...settings, draggableOrb: v })}
+              accentColor={settings.accentColor}
+              modes={['panel']}
+              onLabelClick={() => scrollToConfigProp('draggable')}
+            />
+            {settings.draggableOrb && (
+              <>
+                <div className="space-y-1.5 pl-1">
+                  <p className="text-[10px] text-slate-400 font-mono">config.orbMovement</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {ORB_MOVEMENTS.map(({ id, label, hint }) => {
+                      const active = (settings.orbMovement ?? 'edgeSnap') === id;
+                      return (
+                        <button key={id} type="button" title={hint}
+                          onClick={() => onChange({ ...settings, orbMovement: id })}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${active ? 'text-white shadow-sm' : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                          style={active ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+                        >{label}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-1.5 pl-1">
+                  <p className="text-[10px] text-slate-400 font-mono">config.orbAnimation</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {ORB_ANIMATIONS.map(({ id, label }) => {
+                      const active = (settings.orbAnimation ?? 'bubblegum') === id;
+                      return (
+                        <button key={id} type="button"
+                          onClick={() => onChange({ ...settings, orbAnimation: id })}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${active ? 'text-white shadow-sm' : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                          style={active ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+                        >{label}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Composer Shape */}
         <div className="space-y-2">
           <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Composer Shape</p>
@@ -941,6 +1031,74 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
               >{label}</button>
             ))}
           </div>
+        </div>
+
+        {/* Size */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Size</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            <span className="font-mono">size</span> prop — scales the whole widget (panel, font, bubbles, composer, send). <span className="font-mono">md</span> is the default.
+          </p>
+          <div className="flex gap-2">
+            {['xs', 'sm', 'md', 'lg'].map((id) => (
+              <button key={id} onClick={() => onChange({ ...settings, size: id })}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                  (settings.size ?? 'md') === id ? 'text-white shadow-md' : 'border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+                style={(settings.size ?? 'md') === id ? { backgroundColor: settings.accentColor, borderColor: settings.accentColor } : {}}
+              >{id}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Reply-to-message */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reply to message</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              WhatsApp-style. Tapping ↩ on an AI reply (or an on-load pill) quotes it in the composer and sends its text as <span className="font-mono">inputParams.replySourceText</span>.
+            </p>
+          </div>
+          <Toggle
+            label="Reply icon on AI bubbles (↩)"
+            hint="config.showBubbleReply"
+            checked={settings.showBubbleReply !== false}
+            onChange={(v) => onChange({ ...settings, showBubbleReply: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+          />
+          <Toggle
+            label="Reply pill on load"
+            hint="config.replyContext"
+            checked={settings.replyPill ?? false}
+            onChange={(v) => onChange({ ...settings, replyPill: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+          />
+          {settings.replyPill && (
+            <div className="grid grid-cols-2 gap-3 pl-1">
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-400 font-mono">replyContext.label</p>
+                <input
+                  type="text"
+                  value={settings.replyPillLabel ?? ''}
+                  placeholder="Asking about"
+                  onChange={(e) => onChange({ ...settings, replyPillLabel: e.target.value })}
+                  className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-mono bg-white dark:bg-slate-700 dark:text-slate-100"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-400 font-mono">replyContext.text</p>
+                <input
+                  type="text"
+                  value={settings.replyPillText ?? ''}
+                  placeholder="the Q4 revenue report"
+                  onChange={(e) => onChange({ ...settings, replyPillText: e.target.value })}
+                  className="w-full text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-mono bg-white dark:bg-slate-700 dark:text-slate-100"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Accent Color */}
