@@ -27,6 +27,13 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     showHeaderDot:       true,
     showLandingAvatar:   true,
     showLandingSubtitle: true,
+    // Composer attachments + the agent label beside the input (>= 1.6)
+    attachmentsEnabled: true,
+    attachAccept:       '.csv,.tsv,.json,.txt,.md,.xlsx,.xls,.pdf',
+    attachMaxMb:        10,
+    attachMaxFiles:     5,
+    showAgentName:      true,
+    agentName:          'ConvEngine',
     // Header controls
     showNewChat:       true,
     showLayoutPicker:  true,

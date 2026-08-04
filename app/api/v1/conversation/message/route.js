@@ -60,6 +60,48 @@ export async function POST(request) {
   const delay = 300 + Math.random() * 600;
   await new Promise((r) => setTimeout(r, delay));
 
+  // ── Attachments (convengine-chat >= 1.6) ────────────────────────────────
+  // The widget delivers picked files on inputParams.files, base64-encoded.
+  // This handler DECODES them and reports the byte count it recovered, which
+  // is the only way to prove the bytes actually arrived — echoing the filename
+  // back would pass even if the content never left the browser.
+  const files = Array.isArray(inputParams?.files) ? inputParams.files : [];
+  if (files.length) {
+    const lines = files.map((f) => {
+      let decoded = null;
+      try {
+        decoded = Buffer.from(String(f?.content ?? ''), 'base64');
+      } catch {
+        decoded = null;
+      }
+      const size = decoded ? decoded.length : 0;
+      let preview = '';
+      if (decoded) {
+        const text = decoded.toString('utf8').slice(0, 300);
+        // Only preview when it really is text — a PDF rendered as mojibake
+        // helps nobody.
+        const binary = Array.from(text).some((ch) => {
+          const c = ch.charCodeAt(0);
+          return c < 9 || (c > 13 && c < 32);
+        });
+        if (!binary) preview = text.split('\n').slice(0, 3).join(' / ').slice(0, 150);
+      }
+      const type = f?.mimeType || 'unknown type';
+      const head = `- **${f?.name}** — ${type}, ${size} bytes decoded server-side`;
+      return preview ? `${head}\n  \`${preview}\`` : head;
+    });
+
+    const asked = cleanMessage.trim();
+    const parts = [
+      `Got ${files.length} file(s):`,
+      '',
+      lines.join('\n'),
+    ];
+    if (asked) parts.push('', `You also said: "${asked}"`);
+    parts.push('', '_(demo handler — a real backend would parse these)_');
+    return NextResponse.json({ payload: parts.join('\n') });
+  }
+
   const agent = matchResponse(cleanMessage, enrichOptions);
 
   return NextResponse.json({ payload: agent });

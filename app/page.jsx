@@ -303,6 +303,18 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
             showDarkModeLightMode: chatSettings.showDarkModeLightMode,
             defaultDark:           darkMode,
             renderers:             interactiveRenderers,
+            // convengine-chat >= 1.6 — attach files from the composer.
+            // The demo backend decodes them and reports the byte count, so a
+            // smoke test proves the BYTES arrived, not just the filename.
+            // Both are driven from the playground so you can watch the "+" and
+            // the agent chip appear and disappear live.
+            agentName:             chatSettings.showAgentName ? chatSettings.agentName : '',
+            attachments: {
+              enabled:       chatSettings.attachmentsEnabled ?? true,
+              accept:        chatSettings.attachAccept ?? '.csv,.tsv,.json,.txt,.md,.xlsx,.xls,.pdf',
+              maxFileSizeMb: chatSettings.attachMaxMb ?? 10,
+              maxFiles:      chatSettings.attachMaxFiles ?? 5,
+            },
           }}
           theme={{
             'color-accent':       chatSettings.accentColor,
@@ -424,6 +436,16 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
             showLayoutPicker:      chatSettings.showLayoutPicker,
             showMaximize:          chatSettings.showMaximize,
             showMinimize:          chatSettings.showMinimize,
+            // The playground's own widget — this is the one the Composer
+            // toggles drive, so the "+" and the agent chip appear/disappear
+            // next to the switches that control them.
+            agentName:             chatSettings.showAgentName ? chatSettings.agentName : '',
+            attachments: {
+              enabled:       chatSettings.attachmentsEnabled ?? true,
+              accept:        chatSettings.attachAccept ?? '.csv,.tsv,.json,.txt,.md,.xlsx,.xls,.pdf',
+              maxFileSizeMb: chatSettings.attachMaxMb ?? 10,
+              maxFiles:      chatSettings.attachMaxFiles ?? 5,
+            },
             defaultDark:           darkMode || chatSettings.previewDark,
             bubbleUserBg:          chatSettings.bubbleUserBg,
             bubbleUserText:        chatSettings.bubbleUserText,

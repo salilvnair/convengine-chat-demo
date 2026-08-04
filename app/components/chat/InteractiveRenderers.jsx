@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { ns9AnswerRenderer } from './Ns9DocRenderer.jsx';
 
 /* ──────────────────────────────────────────────────────────────────────────
  * EXAMPLE INTERACTIVE RENDERERS
@@ -1170,4 +1171,5 @@ export const interactiveRenderers = [
   dataTableRenderer,
   completeFormRenderer,
   faqAnswerRenderer,
+  ns9AnswerRenderer,
 ];

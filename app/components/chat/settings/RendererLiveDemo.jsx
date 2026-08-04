@@ -9,6 +9,7 @@ import { ORDER_TRACKER_DEMO_CODE, ORDER_TRACKER_DEMO_PAYLOAD }   from '../../../
 import { PRODUCT_DEMO_CODE, PRODUCT_DEMO_PAYLOAD }   from '../../../data/product-demo.js';
 import { DATA_TABLE_DEMO_CODE, DATA_TABLE_DEMO_PAYLOAD } from '../../../data/data-table-demo.js';
 import { COMPLETE_FORM_DEMO_CODE, COMPLETE_FORM_DEMO_PAYLOAD } from '../../../data/complete-form-demo.js';
+import { NS9_DOC_DEMO_CODE, NS9_DOC_DEMO_PAYLOAD } from '../../../data/ns9-doc-demo.js';
 
 const COLOR_BG    = { indigo: 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-900', pink: 'bg-pink-50 dark:bg-pink-900/30 border-pink-100 dark:border-pink-900', amber: 'bg-amber-50 dark:bg-amber-900/30 border-amber-100 dark:border-amber-900', emerald: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-900' };
 const COLOR_BADGE = { indigo: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300', pink: 'bg-pink-100 dark:bg-pink-900/50 text-pink-700 dark:text-pink-300', amber: 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300', emerald: 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' };
@@ -85,6 +86,18 @@ const RENDERER_DEMOS = [
     payloadBuilder: () => buildFaqResponsePayloadFromFakeChat('how to reset password', 3),
     payload: buildFaqResponsePayloadFromFakeChat('how to reset password', 3),
     code: FAQ_RESPONSE_CODE,
+  },
+  {
+    key: 'Ns9Answer',
+    icon: '📄',
+    title: 'Ns9Answer (custom renderer)',
+    desc: "NS9 convengine bridge answer (X-NS9-Response-Format: json). Markdown-rendered "
+        + "answer text, key points, caveats, and a document card — file name, Open link, "
+        + "Download button — per unique cited source file.",
+    color: 'pink',
+    actions: [],
+    payload: NS9_DOC_DEMO_PAYLOAD,
+    code: NS9_DOC_DEMO_CODE,
   },
 ];
 

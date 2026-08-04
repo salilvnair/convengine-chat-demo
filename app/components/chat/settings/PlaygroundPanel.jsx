@@ -52,6 +52,12 @@ function buildGeneratedCode(settings, iconSvgs) {
     !settings.showLandingAvatar   ? `    showLandingAvatar: false,`   : null,
     !settings.showLandingSubtitle ? `    showLandingSubtitle: false,` : null,
     !settings.showNewChat         ? `    showNewChat: false,`         : null,
+    settings.attachmentsEnabled === false
+      ? `    attachments: { enabled: false },`
+      : `    attachments: { enabled: true, accept: '${settings.attachAccept ?? ''}', maxFileSizeMb: ${settings.attachMaxMb ?? 10}, maxFiles: ${settings.attachMaxFiles ?? 5} },`,
+    (settings.showAgentName ?? true) && settings.agentName
+      ? `    agentName: '${settings.agentName}',`
+      : null,
     !settings.showLayoutPicker    ? `    showLayoutPicker: false,`    : null,
     !settings.showMaximize        ? `    showMaximize: false,`        : null,
     !settings.showMinimize        ? `    showMinimize: false,`        : null,
@@ -509,6 +515,97 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
           {showFor('panel') && <Toggle checked={settings.showMaximize}     onChange={(v) => onChange({ ...settings, showMaximize: v })}      label="Expand to Center"   hint="config.showMaximize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMaximize')} />}
           {showFor('panel') && <Toggle checked={settings.showMinimize}     onChange={(v) => onChange({ ...settings, showMinimize: v })}      label="Minimize Button"    hint="config.showMinimize"     modes={['panel']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showMinimize')} />}
           <Toggle checked={settings.showTransportBadge ?? false} onChange={(v) => onChange({ ...settings, showTransportBadge: v })} label="Transport Badge in Header" hint="config.showTransportBadge" modes={['panel','sidepanel','fullscreen']} accentColor={settings.accentColor} onLabelClick={() => scrollToConfigProp('showTransportBadge')} />
+        </div>
+
+        <hr className="border-slate-100 dark:border-slate-700" />
+
+        {/* Composer: attachments + agent label (>= 1.6) */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Composer</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              The <span className="font-mono">+</span> attach button and the agent chip, both on the bar
+              UNDER the input box. Toggle them and watch the composer change.
+            </p>
+          </div>
+
+          <Toggle
+            label="Attach files (+ button)"
+            hint="config.attachments.enabled"
+            checked={settings.attachmentsEnabled ?? true}
+            onChange={(v) => onChange({ ...settings, attachmentsEnabled: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+            onLabelClick={() => scrollToConfigProp('attachments')}
+          />
+
+          {(settings.attachmentsEnabled ?? true) && (
+            <div className="pl-1 space-y-2">
+              <div className="space-y-1">
+                <p className="text-[10px] text-slate-400 font-mono">config.attachments.accept</p>
+                <input
+                  type="text"
+                  value={settings.attachAccept ?? ''}
+                  onChange={(e) => onChange({ ...settings, attachAccept: e.target.value })}
+                  placeholder=".csv,.pdf,.xlsx"
+                  className="w-full px-2 py-1 rounded-md text-xs font-mono border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                />
+                <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                  Rejected files never leave the browser &mdash; the composer shows why instead of sending.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <p className="text-[10px] text-slate-400 font-mono">maxFileSizeMb</p>
+                  <input
+                    type="number" min="1"
+                    value={settings.attachMaxMb ?? 10}
+                    onChange={(e) => onChange({ ...settings, attachMaxMb: Number(e.target.value) || 1 })}
+                    className="w-full px-2 py-1 rounded-md text-xs font-mono border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="text-[10px] text-slate-400 font-mono">maxFiles</p>
+                  <input
+                    type="number" min="1"
+                    value={settings.attachMaxFiles ?? 5}
+                    onChange={(e) => onChange({ ...settings, attachMaxFiles: Number(e.target.value) || 1 })}
+                    className="w-full px-2 py-1 rounded-md text-xs font-mono border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                Files ride on <span className="font-mono">inputParams.files</span> as base64 &mdash; no
+                second endpoint. This demo&rsquo;s backend decodes them and replies with the byte count, so
+                you can prove the bytes arrived and not just the filename.
+              </p>
+            </div>
+          )}
+
+          <Toggle
+            label="Agent name chip"
+            hint="config.agentName"
+            checked={settings.showAgentName ?? true}
+            onChange={(v) => onChange({ ...settings, showAgentName: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+            onLabelClick={() => scrollToConfigProp('agentName')}
+          />
+          {(settings.showAgentName ?? true) && (
+            <div className="pl-1 space-y-1">
+              <p className="text-[10px] text-slate-400 font-mono">config.agentName</p>
+              <input
+                type="text"
+                value={settings.agentName ?? ''}
+                onChange={(e) => onChange({ ...settings, agentName: e.target.value })}
+                placeholder="ConvEngine"
+                className="w-full px-2 py-1 rounded-md text-xs font-mono border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+              />
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                Empty string hides the chip &mdash; same as switching this off.
+              </p>
+            </div>
+          )}
         </div>
 
         <hr className="border-slate-100 dark:border-slate-700" />
