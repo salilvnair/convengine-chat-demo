@@ -63,7 +63,20 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     userIconColor:   { light: '', dark: '' },
     agentIconBg:     { light: '', dark: '' },
     agentIconColor:  { light: '', dark: '' },
+    attachmentChipBg:        { light: '', dark: '' },
+    attachmentChipBorder:    { light: '', dark: '' },
+    attachmentChipIconColor: { light: '', dark: '' },
+    attachmentChipTextColor: { light: '', dark: '' },
+    queueItemTextColor:      { light: '', dark: '' },
+    feedbackUpColor:          { light: '', dark: '' },
+    feedbackUpRestingColor:   { light: '', dark: '' },
+    feedbackDownColor:        { light: '', dark: '' },
+    feedbackDownRestingColor: { light: '', dark: '' },
+    feedbackClickAnimation: true,
     composerShape:   'round',
+    // Message queue (Claude Code / Codex style) — cards above the composer
+    maxQueuedMessages: 5,
+    queueColor1: '', queueColor2: '', queueColor3: '', queueColor4: '', queueColor5: '',
     // Preview
     previewDark:     false,
     // Message enrichment
@@ -329,9 +342,12 @@ const myRenderer = {
                 {/* ── A ── */}
                 <PropRow prop="agentIconBg"            type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar background. Defaults to a transparent tint of the agent bubble bg. Overrides --ce-avatar-agent-bg.' />
                 <PropRow prop="agentIconColor"         type='string | { light, dark }'  defaultVal='undefined'  description='Agent avatar icon/text color. Defaults to solid bubbleAgentBg when set; otherwise secondary text color. Overrides --ce-avatar-agent-color.' />
-                <PropRow id="config-orbAnimation"      prop="orbAnimation"    type='"none"|"bubblegum"|"smooth"|"glide"|"spring"|"elastic"|"rubberband"|"jelly"|"wobble"|"pop"|"magnetic"' defaultVal='"bubblegum"' description='Panel mode + draggable prop only. Named drag/snap animation style for the orb. "none" disables all animation for an instant, non-animated reposition.' />
                 <PropRow prop="apiEndpoints"           type='object'   defaultVal='undefined'     description='Override individual endpoint paths. Keys: message, feedback, audit. Each is a path ("/api/v1/message") or full URL. Unspecified keys fall back to {apiHost}/api/v1/conversation/{name}. See Backend Routes section.' />
                 <PropRow prop="apiHost"                type='string'   defaultVal='""'            description='Base URL of your backend. Omit for same-origin servers. Pass a full URL (e.g. "http://localhost:8080") for a separate backend.' />
+                <PropRow prop="attachmentChipBg"        type='string | { light, dark }'  defaultVal='undefined'  description='Background of a picked-file chip in the composer. Overrides --ce-attachment-chip-bg.' />
+                <PropRow prop="attachmentChipBorder"    type='string | { light, dark }'  defaultVal='undefined'  description='Border of a picked-file chip. Overrides --ce-attachment-chip-border.' />
+                <PropRow prop="attachmentChipIconColor" type='string | { light, dark }'  defaultVal='undefined'  description='File icon color inside the chip. Defaults to the accent color. Overrides --ce-attachment-chip-icon.' />
+                <PropRow prop="attachmentChipTextColor" type='string | { light, dark }'  defaultVal='undefined'  description='File name/size text color inside the chip. Overrides --ce-attachment-chip-text.' />
                 {/* ── B ── */}
                 <PropRow prop="bubbleAgentBg"          type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble background. Overrides --ce-bg-bubble-agent.' />
                 <PropRow prop="bubbleAgentText"        type='string | { light, dark }'  defaultVal='undefined'  description='Assistant bubble text color. Overrides --ce-text-bubble-agent.' />
@@ -342,6 +358,12 @@ const myRenderer = {
                 <PropRow prop="conversationId"         type='string'   defaultVal='undefined'     description='Resume an existing conversation by ID.' />
                 {/* ── D ── */}
                 <PropRow prop="defaultDark"            type='boolean'                   defaultVal='false'      description='Seed the widget in dark mode on first render.' />
+                {/* ── F ── */}
+                <PropRow prop="feedbackClickAnimation" type='boolean'  defaultVal='true'  description='Plays a bouncy "pop" overshoot on the 👍/👎 icon the moment you vote. false swaps it for a plain smooth scale — the voted thumb still ends up bigger than the others either way.' />
+                <PropRow prop="feedbackDownColor"        type='string | { light, dark }'  defaultVal='"#dc2626"'  description='Hover + voted color for 👎. Overrides --ce-feedback-down-color.' />
+                <PropRow prop="feedbackDownRestingColor" type='string | { light, dark }'  defaultVal='text-secondary' description='Idle (unvoted, unhovered) color for 👎. Overrides --ce-feedback-down-resting-color.' />
+                <PropRow prop="feedbackUpColor"          type='string | { light, dark }'  defaultVal='"#16a34a"'  description='Hover + voted color for 👍. Overrides --ce-feedback-up-color.' />
+                <PropRow prop="feedbackUpRestingColor"   type='string | { light, dark }'  defaultVal='text-secondary' description='Idle (unvoted, unhovered) color for 👍. Overrides --ce-feedback-up-resting-color.' />
                 {/* ── I ── */}
                 <PropRow prop="icons"                  type='object'   defaultVal='{}'       description='Override any icon component. Each value must be a React component — see Custom Icons section.' />
                 {/* ── L ── */}
@@ -350,15 +372,21 @@ const myRenderer = {
                 <PropRow prop="landingChipsAnchorPadding" type='number | string'               defaultVal='8'     description='Gap in px between the anchor and the chips. Pass a number (8) or CSS string ("8px"). Default 8px.' />
                 <PropRow prop="landingChipsOrientation" type='"row" | "column"'               defaultVal='"row"'  description='Layout direction of the chips container.' />
                 <PropRow prop="landingChipsShape"      type='"round" | "rect"'                defaultVal='"round"' description='Border-radius style — pill (round) or card (rect).' />
+                {/* ── M ── */}
+                <PropRow prop="maxQueuedMessages"      type='number'   defaultVal='5'          description='Panel/sidepanel/fullscreen. Max messages held in the pending-send queue while a prior request is in flight. Sending beyond this cap is a no-op until a slot frees up.' />
                 {/* ── O ── */}
                 <PropRow prop="onMessage"              type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
                 <PropRow prop="onResponse"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
+                <PropRow id="config-orbAnimation"      prop="orbAnimation"    type='"none"|"bubblegum"|"smooth"|"glide"|"spring"|"elastic"|"rubberband"|"jelly"|"wobble"|"pop"|"magnetic"' defaultVal='"bubblegum"' description='Panel mode + draggable prop only. Named drag/snap animation style for the orb. "none" disables all animation for an instant, non-animated reposition.' />
                 <PropRow prop="orbMovement"            type='"edgeSnap"|"freeform"' defaultVal='"edgeSnap"' description='Panel mode + draggable prop only. "edgeSnap" snaps the orb to the nearest left/right edge on release. "freeform" leaves it exactly where dropped — anywhere on the page.' />
                 <PropRow prop="orbStorageKey"          type='string'   defaultVal='"ce-chat-orb-pos"' description='Panel mode + draggable prop only. localStorage key used to persist the orb’s dropped position — customize if you render multiple draggable widgets on one page.' />
                 {/* ── P ── */}
                 <PropRow prop="panelBg"                type='string | { light, dark }'  defaultVal='undefined'  description='Chat panel background color. Overrides --ce-bg-panel.' />
                 <PropRow prop="persistOrbPosition"     type='boolean'  defaultVal='true'  description='Panel mode + draggable prop only. Remembers the orb’s last dropped position across reloads via localStorage.' />
                 <PropRow prop="placeholder"            type='string'   defaultVal='"Ask ConvEngine…"'  description='Composer input placeholder text.' />
+                {/* ── Q ── */}
+                <PropRow prop="queueColors"            type='(string | { light, dark })[]' defaultVal='undefined' description='Up to 5 background colors, cycled per pending-send card (index 0→4 → card 1→5). Borders auto-derive from each color. Overrides --ce-queue-color-1..5.' />
+                <PropRow prop="queueItemTextColor"     type='string | { light, dark }'  defaultVal='undefined'  description='Text color on every pending-send card, regardless of its cycled background. Overrides --ce-queue-item-text.' />
                 {/* ── R ── */}
                 <PropRow prop="renderers"              type='Array'    defaultVal='[]'       description='Custom renderer providers injected before built-ins.' />
                 {/* ── S ── */}
@@ -370,7 +398,7 @@ const myRenderer = {
                 <PropRow id="config-showLandingAvatar"     prop="showLandingAvatar"     type='boolean'  defaultVal='true'      description='Show the bot avatar icon on the landing screen.' />
                 <PropRow id="config-showLandingSubtitle"   prop="showLandingSubtitle"   type='boolean'  defaultVal='true'      description='Show the subtitle text on the landing screen.' />
                 <PropRow id="config-showLayoutPicker"      prop="showLayoutPicker"      type='boolean'  defaultVal='true'      description='Show the Chat View Switcher button in the header (panel mode only).' />
-                <PropRow id="config-showMaximize"          prop="showMaximize"          type='boolean'  defaultVal='true'      description='Show the Expand to Center (maximize) button in the panel header.' />
+                <PropRow id="config-showMaximize"          prop="showMaximize"          type='boolean'  defaultVal='true'      description='Show the Expand to Center (maximize) button in the panel header. Once popped out, the whole header bar is a drag handle (not just the title) and all 4 edges + 4 corners are resize handles — like a native OS window, clamped so it can never be dragged or resized past the viewport. No extra config needed.' />
                 <PropRow id="config-showMinimize"          prop="showMinimize"          type='boolean'  defaultVal='true'      description='Show the Minimize button in the panel header.' />
                 <PropRow id="config-showNewChat"           prop="showNewChat"           type='boolean'  defaultVal='true'      description='Show the New Chat button in the header (panel and fullscreen modes).' />
                 <PropRow id="config-showTransportBadge"    prop="showTransportBadge"    type='boolean'  defaultVal='false'     description='Show a REST / SSE / STOMP transport badge pill in the chat header. Works in all modes (panel, sidepanel, fullscreen). Independent of streaming — shows REST when stream is off, SSE or STOMP (green) when stream is on. Useful for demos and debugging.' />

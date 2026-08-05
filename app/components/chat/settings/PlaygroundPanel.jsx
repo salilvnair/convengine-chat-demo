@@ -28,6 +28,10 @@ const ORB_MOVEMENTS = [
   { id: 'freeform',  label: '✋ Freeform', hint: 'Stays exactly wherever it’s dropped, anywhere on the page' },
 ];
 
+// config.queueColors[0..4] — one swatch per settings.queueColor1..5 key.
+const QUEUE_COLOR_KEYS = ['queueColor1', 'queueColor2', 'queueColor3', 'queueColor4', 'queueColor5'];
+const QUEUE_COLOR_DEFAULTS = ['#eef2ff', '#ecfeff', '#f0fdf4', '#fefce8', '#fdf4ff'];
+
 function buildEnrichmentSnippet(enrich) {
   if (!enrich) return null;
   const { prefix = '', suffix = '', inputParams = {} } = enrich;
@@ -58,6 +62,9 @@ function buildGeneratedCode(settings, iconSvgs) {
     'userIconBg','userIconColor','agentIconBg','agentIconColor',
     'timeLabelBg','timeLabelColor','timeLabelBorderColor',
     'dateLabelBg','dateLabelColor','dateLabelBorderColor',
+    'attachmentChipBg','attachmentChipBorder','attachmentChipIconColor','attachmentChipTextColor',
+    'queueItemTextColor',
+    'feedbackUpColor','feedbackUpRestingColor','feedbackDownColor','feedbackDownRestingColor',
   ];
 
   const lines = [
@@ -85,6 +92,7 @@ function buildGeneratedCode(settings, iconSvgs) {
     (settings.draggableOrb && (settings.orbMovement ?? 'edgeSnap') !== 'edgeSnap') ? `    orbMovement: "${settings.orbMovement}",` : null,
     (settings.draggableOrb && (settings.orbAnimation ?? 'bubblegum') !== 'bubblegum') ? `    orbAnimation: "${settings.orbAnimation}",` : null,
     settings.showBubbleReply === false ? `    showBubbleReply: false,`  : null,
+    settings.feedbackClickAnimation === false ? `    feedbackClickAnimation: false,` : null,
     settings.composerShape === 'rect' ? `    composerShape: 'rect',`  : null,
     // Time & Date
     settings.showBubbleTime   ? `    showBubbleTime: true,`    : null,
@@ -103,6 +111,14 @@ function buildGeneratedCode(settings, iconSvgs) {
       const ser = (l && d) ? `{ light: "${l}", dark: "${d}" }` : l ? `"${l}"` : `{ dark: "${d}" }`;
       return `    ${key}: ${ser},`;
     }),
+    // Message queue
+    ((settings.maxQueuedMessages ?? 5) !== 5) ? `    maxQueuedMessages: ${settings.maxQueuedMessages},` : null,
+    (() => {
+      const qc = QUEUE_COLOR_KEYS.map((k) => settings[k]?.trim() || null);
+      if (!qc.some(Boolean)) return null;
+      const items = qc.map((c) => (c ? `"${c}"` : 'null')).join(', ');
+      return `    queueColors: [${items}],`;
+    })(),
   ].filter(Boolean);
 
   // Icons
@@ -1018,6 +1034,63 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
           </div>
         )}
 
+        {/* Message Queue — Claude Code / Codex style */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Message Queue</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Sending while a reply is still in flight no longer drops the message — it queues (capped below) and each one sends automatically, 1:1, as the prior request resolves.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[10px] text-slate-400 font-mono">config.maxQueuedMessages</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1" max="20" step="1"
+                value={settings.maxQueuedMessages ?? 5}
+                onChange={(e) => onChange({ ...settings, maxQueuedMessages: Math.max(1, Number(e.target.value) || 1) })}
+                className="w-20 text-sm border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900 font-mono text-center bg-white dark:bg-slate-700 dark:text-slate-100"
+              />
+              <span className="text-[11px] text-slate-400">queued messages max (default 5)</span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[10px] text-slate-400 font-mono">config.queueColors — cycles per card, 1→5</p>
+            <div className="flex gap-2 flex-wrap">
+              {QUEUE_COLOR_KEYS.map((key, i) => {
+                const value = settings[key]?.trim() || QUEUE_COLOR_DEFAULTS[i];
+                return (
+                  <label key={key} className="flex flex-col items-center gap-1 cursor-pointer">
+                    <span
+                      className="w-9 h-9 rounded-xl border-2 border-slate-200 dark:border-slate-600 shadow-sm relative overflow-hidden"
+                      style={{ background: value }}
+                      title={`Queue card ${i + 1} color`}
+                    >
+                      <input
+                        type="color"
+                        value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : '#6366f1'}
+                        onChange={(e) => onChange({ ...settings, [key]: e.target.value })}
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      />
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-mono">{i + 1}</span>
+                  </label>
+                );
+              })}
+              {QUEUE_COLOR_KEYS.some((k) => settings[k]?.trim()) && (
+                <button
+                  type="button"
+                  onClick={() => onChange({ ...settings, ...Object.fromEntries(QUEUE_COLOR_KEYS.map((k) => [k, ''])) })}
+                  className="self-center text-[10px] text-slate-400 hover:text-rose-500 transition-colors ml-1"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Composer Shape */}
         <div className="space-y-2">
           <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Composer Shape</p>
@@ -1049,6 +1122,30 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
               >{id}</button>
             ))}
           </div>
+        </div>
+
+        {/* Feedback Thumbs (👍👎) */}
+        <div className="space-y-3">
+          <div>
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Feedback Thumbs</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              Bare icons, neutral until voted — green/red colors are set below in Chat Colors (Feedback 👍/👎 tiles). Never disables, so you can change your vote as many times as you like.
+            </p>
+          </div>
+          <Toggle
+            label="Pop animation on vote"
+            hint="config.feedbackClickAnimation"
+            checked={settings.feedbackClickAnimation !== false}
+            onChange={(v) => onChange({ ...settings, feedbackClickAnimation: v })}
+            accentColor={settings.accentColor}
+            modes={['panel','sidepanel','fullscreen']}
+            onLabelClick={() => scrollToConfigProp('feedbackClickAnimation')}
+          />
+          <p className="text-[10px] text-slate-400 pl-1">
+            {settings.feedbackClickAnimation !== false
+              ? 'On: the voted thumb pops with a bouncy overshoot, then settles bigger than the others.'
+              : 'Off: the voted thumb still ends up bigger — just a plain smooth scale, no bounce.'}
+          </p>
         </div>
 
         {/* Reply-to-message */}

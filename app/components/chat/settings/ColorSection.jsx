@@ -20,6 +20,15 @@ export const COLOR_DEFAULTS = {
   dateLabelBg:          { light: '',                   dark: '' },
   dateLabelColor:       { light: '',                   dark: '' },
   dateLabelBorderColor: { light: '',                   dark: '' },
+  attachmentChipBg:        { light: '#f3f3f3', dark: '#303030' },
+  attachmentChipBorder:    { light: '#e2e8f0', dark: '#3a3a3a' },
+  attachmentChipIconColor: { light: '',        dark: '' },  // derived: accent color
+  attachmentChipTextColor: { light: '#1e293b', dark: '#f2f6fa' },
+  queueItemTextColor:      { light: '#1e293b', dark: '#f2f6fa' },
+  feedbackUpColor:          { light: '#16a34a', dark: '#16a34a' },
+  feedbackUpRestingColor:   { light: '#64748b', dark: '#9ca3af' },
+  feedbackDownColor:        { light: '#dc2626', dark: '#dc2626' },
+  feedbackDownRestingColor: { light: '#64748b', dark: '#9ca3af' },
 };
 
 export const COLOR_TILE_META = [
@@ -40,6 +49,15 @@ export const COLOR_TILE_META = [
   { key: 'dateLabelBg',          label: 'Date Chip Bg',      hint: 'config.dateLabelBg',          modes: ['panel','sidepanel','fullscreen'] },
   { key: 'dateLabelColor',       label: 'Date Chip Color',   hint: 'config.dateLabelColor',       modes: ['panel','sidepanel','fullscreen'] },
   { key: 'dateLabelBorderColor', label: 'Date Chip Border',  hint: 'config.dateLabelBorderColor', modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'attachmentChipBg',        label: 'Attachment Chip Bg',    hint: 'config.attachmentChipBg',        modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'attachmentChipBorder',    label: 'Attachment Chip Border',hint: 'config.attachmentChipBorder',    modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'attachmentChipIconColor', label: 'Attachment Chip Icon',  hint: 'config.attachmentChipIconColor', modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'attachmentChipTextColor', label: 'Attachment Chip Text',  hint: 'config.attachmentChipTextColor', modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'queueItemTextColor',      label: 'Queue Card Text',       hint: 'config.queueItemTextColor',      modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'feedbackUpColor',          label: 'Feedback 👍 (voted/hover)', hint: 'config.feedbackUpColor',          modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'feedbackUpRestingColor',   label: 'Feedback 👍 (idle)',        hint: 'config.feedbackUpRestingColor',   modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'feedbackDownColor',        label: 'Feedback 👎 (voted/hover)', hint: 'config.feedbackDownColor',        modes: ['panel','sidepanel','fullscreen'] },
+  { key: 'feedbackDownRestingColor', label: 'Feedback 👎 (idle)',        hint: 'config.feedbackDownRestingColor', modes: ['panel','sidepanel','fullscreen'] },
 ];
 
 export function ColorVariantRow({ isDarkMode, value, defaultVal, onChange }) {
