@@ -274,6 +274,7 @@ const myRenderer = {
     onFeedback: (feedback) => console.log('feedback:', feedback),
     onMessage:  (text) => console.log('user sent:', text),
     onResponse: (text) => console.log('AI replied:', text),
+    onNewChat:  () => console.log('conversation reset — drop any per-conversation state here'),
     onSubmit:   ({ userText, apiText, inputParams }) => console.log('submitting:', apiText, inputParams),
     placeholder: 'Ask ConvEngine…',
     renderers: [myRenderer],
@@ -377,6 +378,9 @@ const myRenderer = {
                 {/* ── O ── */}
                 <PropRow prop="onMessage"              type='function' defaultVal='undefined'  description='(text: string) => void — fired when the user sends a message.' />
                 <PropRow prop="onResponse"             type='function' defaultVal='undefined'  description='(text: string) => void — fired when an assistant response arrives.' />
+                <PropRow prop="onNewChat"              type='function' defaultVal='undefined'  description='() => void — fired when the conversation is reset (the New Chat button, after its confirmation, and actions.reset()). The library already tells the BACKEND on its own: the next request after a reset carries reset:true in its body. Use this for state the library cannot know about — server-side scratch files, a history sidebar, analytics.' />
+                <PropRow prop="newChatConfirm"         type='object'   defaultVal='undefined'  description="{ when?: 'when-not-empty' | 'always' | 'never', message?, cancelLabel?, confirmLabel? } — the New Chat confirmation dialog. Defaults to confirming only when the transcript is non-empty. Use 'always' where a reset is expensive because it clears server-side state, 'never' where a new chat is cheap and the extra click is friction." />
+                <PropRow prop="feedback"               type='object'   defaultVal='undefined'  description="{ requireCommentOn?: 'none' | 'negative' | 'always', requireCommentText?, submit?, upLabel?, downLabel?, commentPlaceholder?, commentPlaceholderPositive?, commentCancelLabel?, commentSubmitLabel?, thanksUpText?, thanksDownText? } — the thumbs row. requireCommentOn collects a written correction before submitting, which matters whenever the backend ACTS on feedback rather than counting it: a bare down-vote records that an answer was wrong and nothing about what it should have been. submit(payload) takes over the request entirely (payload carries comment and the question the answer replied to) for an app whose feedback API is not this library's." />
                 <PropRow id="config-orbAnimation"      prop="orbAnimation"    type='"none"|"bubblegum"|"smooth"|"glide"|"spring"|"elastic"|"rubberband"|"jelly"|"wobble"|"pop"|"magnetic"' defaultVal='"bubblegum"' description='Panel mode + draggable prop only. Named drag/snap animation style for the orb. "none" disables all animation for an instant, non-animated reposition.' />
                 <PropRow prop="orbMovement"            type='"edgeSnap"|"freeform"' defaultVal='"edgeSnap"' description='Panel mode + draggable prop only. "edgeSnap" snaps the orb to the nearest left/right edge on release. "freeform" leaves it exactly where dropped — anywhere on the page.' />
                 <PropRow prop="orbStorageKey"          type='string'   defaultVal='"ce-chat-orb-pos"' description='Panel mode + draggable prop only. localStorage key used to persist the orb’s dropped position — customize if you render multiple draggable widgets on one page.' />
