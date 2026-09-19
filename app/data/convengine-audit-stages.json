@@ -1,0 +1,966 @@
+[
+  {
+    "stage": "AGENT_DB_PREFLIGHT",
+    "keys": [
+      "_meta",
+      "error_class",
+      "error_message",
+      "params",
+      "params_after",
+      "params_before",
+      "preflight_diagnostics",
+      "schema_knowledge_used",
+      "semantic_knowledge_used",
+      "sql_after",
+      "sql_before",
+      "status"
+    ],
+    "sites": [
+      "undefined:232",
+      "undefined:571",
+      "undefined:636"
+    ]
+  },
+  {
+    "stage": "AGENT_DB_PREFLIGHT_REPAIR",
+    "keys": [
+      "_meta",
+      "error",
+      "failed_sql",
+      "params",
+      "params_after",
+      "params_before",
+      "preflight_diagnostics",
+      "repaired_sql",
+      "schema_knowledge_used",
+      "semantic_knowledge_used",
+      "sql_after",
+      "sql_before"
+    ],
+    "sites": [
+      "undefined:255",
+      "undefined:593"
+    ]
+  },
+  {
+    "stage": "AGENT_FINAL_ANSWER",
+    "keys": [
+      "SEMANTIC_CLARIFICATION_REQUIRED",
+      "SEMANTIC_UNSUPPORTED",
+      "answer",
+      "reason",
+      "tool_code"
+    ],
+    "sites": [
+      "undefined:197",
+      "undefined:342",
+      "undefined:361"
+    ]
+  },
+  {
+    "stage": "AGENT_NO_TOOLS_AVAILABLE",
+    "keys": [
+      "intent",
+      "state"
+    ],
+    "sites": [
+      "undefined:157"
+    ]
+  },
+  {
+    "stage": "AGENT_PLAN_LLM_INPUT",
+    "keys": [
+      "agent_observations_compacted",
+      "agent_observations_final_chars",
+      "agent_observations_raw_chars",
+      "schema",
+      "system_prompt",
+      "templateFromCeConfig (AgentPlanner)",
+      "user_prompt"
+    ],
+    "sites": [
+      "undefined:197"
+    ]
+  },
+  {
+    "stage": "AGENT_PLAN_LLM_OUTPUT",
+    "keys": [
+      "json"
+    ],
+    "sites": [
+      "undefined:216"
+    ]
+  },
+  {
+    "stage": "AGENT_SKIPPED_PENDING_CLARIFICATION",
+    "keys": [
+      "intent"
+    ],
+    "sites": [
+      "undefined:143"
+    ]
+  },
+  {
+    "stage": "AGENT_SKIPPED_SCHEMA_INCOMPLETE",
+    "keys": [
+      "intent"
+    ],
+    "sites": [
+      "undefined:97"
+    ]
+  },
+  {
+    "stage": "AGENT_TOOL_CALL",
+    "keys": [],
+    "sites": [
+      "undefined:294"
+    ]
+  },
+  {
+    "stage": "AGENT_TOOL_ERROR",
+    "keys": [
+      "preflight_diagnostics",
+      "root_cause_message"
+    ],
+    "sites": [
+      "undefined:229",
+      "undefined:283",
+      "undefined:382"
+    ]
+  },
+  {
+    "stage": "AGENT_TOOL_RESULT",
+    "keys": [
+      "rows",
+      "tool_code",
+      "tool_group"
+    ],
+    "sites": [
+      "undefined:318"
+    ]
+  },
+  {
+    "stage": "AGENT_USER_FEEDBACK",
+    "keys": [
+      "captured_query_knowledge_count",
+      "captured_user_query_knowledge_count",
+      "conversation_id",
+      "embedded_user_query_knowledge_count",
+      "feedback_id",
+      "feedback_type",
+      "message_id"
+    ],
+    "sites": [
+      "undefined:124"
+    ]
+  },
+  {
+    "stage": "ASSISTANT_OUTPUT",
+    "keys": [
+      "context",
+      "intent",
+      "output",
+      "outputFormat",
+      "responseId",
+      "responseType",
+      "schemaJson",
+      "state"
+    ],
+    "sites": [
+      "undefined:130"
+    ]
+  },
+  {
+    "stage": "AUTO_ADVANCE_FACTS",
+    "keys": [
+      "hasAnySchemaValue",
+      "intent",
+      "reason",
+      "schemaComplete",
+      "state"
+    ],
+    "sites": [
+      "undefined:56"
+    ]
+  },
+  {
+    "stage": "AUTO_ADVANCE_SKIPPED_NO_SCHEMA",
+    "keys": [
+      "reason"
+    ],
+    "sites": [
+      "undefined:39"
+    ]
+  },
+  {
+    "stage": "CACHE_INSPECTION",
+    "keys": [
+      "cache_snapshot"
+    ],
+    "sites": [
+      "undefined:40"
+    ]
+  },
+  {
+    "stage": "CONVERSATION_RESET",
+    "keys": [
+      "context",
+      "intent",
+      "matchedResetIntentCodes",
+      "reason",
+      "state"
+    ],
+    "sites": [
+      "undefined:57",
+      "undefined:74"
+    ]
+  },
+  {
+    "stage": "DIALOGUE_ACT_CLASSIFIED",
+    "keys": [
+      "dialogueAct",
+      "dialogueActConfidence",
+      "dialogueActResolveMode",
+      "dialogueActSource",
+      "intent",
+      "standaloneQuery",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:181"
+    ]
+  },
+  {
+    "stage": "DIALOGUE_ACT_LLM_ERROR",
+    "keys": [
+      "error",
+      "exception",
+      "message"
+    ],
+    "sites": [
+      "undefined:337"
+    ]
+  },
+  {
+    "stage": "DIALOGUE_ACT_LLM_INPUT",
+    "keys": [
+      "schema",
+      "system_prompt",
+      "user_prompt"
+    ],
+    "sites": [
+      "undefined:327"
+    ]
+  },
+  {
+    "stage": "DIALOGUE_ACT_LLM_OUTPUT",
+    "keys": [
+      "json"
+    ],
+    "sites": [
+      "undefined:342"
+    ]
+  },
+  {
+    "stage": "DISAMBIGUATION_REQUIRED",
+    "keys": [
+      "candidateCount",
+      "intent",
+      "options",
+      "question",
+      "questionSource",
+      "reason",
+      "state"
+    ],
+    "sites": [
+      "undefined:148"
+    ]
+  },
+  {
+    "stage": "ENGINE_RETURN",
+    "keys": [
+      "final_result",
+      "intent",
+      "state"
+    ],
+    "sites": [
+      "undefined:64"
+    ]
+  },
+  {
+    "stage": "EXACT_RESPONSE_RENDERING",
+    "keys": [
+      "component",
+      "errorClass",
+      "errorMessage",
+      "fallbackUsed",
+      "templatePreview"
+    ],
+    "sites": [
+      "undefined:122"
+    ]
+  },
+  {
+    "stage": "GUARDRAIL_ALLOW",
+    "keys": [
+      "approvalGranted",
+      "approvalRequired",
+      "intent",
+      "reason",
+      "result",
+      "sensitive",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:79"
+    ]
+  },
+  {
+    "stage": "GUARDRAIL_DENY",
+    "keys": [
+      "approvalGranted",
+      "intent",
+      "reason",
+      "result",
+      "sensitive",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:67"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_ACCEPTED",
+    "keys": [
+      "confidence",
+      "intent",
+      "scores",
+      "state"
+    ],
+    "sites": [
+      "undefined:337"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_CLARIFICATION_SUPPRESSED_SCHEMA_FLOW",
+    "keys": [
+      "intent",
+      "question",
+      "state"
+    ],
+    "sites": [
+      "undefined:245"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_COLLISION",
+    "keys": [
+      "candidates",
+      "intent",
+      "question",
+      "scores",
+      "state"
+    ],
+    "sites": [
+      "undefined:236"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_LLM_INPUT",
+    "keys": [
+      "systemPrompt",
+      "templateFromCeConfig (AgentIntentResolver)",
+      "userPrompt"
+    ],
+    "sites": [
+      "undefined:163"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_LLM_OUTPUT",
+    "keys": [
+      "json"
+    ],
+    "sites": [
+      "undefined:183"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_NEEDS_CLARIFICATION",
+    "keys": [
+      "followups",
+      "intent",
+      "question",
+      "state"
+    ],
+    "sites": [
+      "undefined:288"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_REJECTED",
+    "keys": [
+      "allowedIntents",
+      "confidence",
+      "followups",
+      "intent",
+      "question",
+      "reason",
+      "scores",
+      "state"
+    ],
+    "sites": [
+      "undefined:191",
+      "undefined:265",
+      "undefined:295",
+      "undefined:309",
+      "undefined:320"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_SCORES",
+    "keys": [
+      "followups",
+      "scores"
+    ],
+    "sites": [
+      "undefined:206"
+    ]
+  },
+  {
+    "stage": "INTENT_AGENT_SKIPPED",
+    "keys": [
+      "reason"
+    ],
+    "sites": [
+      "undefined:127"
+    ]
+  },
+  {
+    "stage": "INTENT_CLASSIFICATION_MATCHED",
+    "keys": [
+      "intent",
+      "matchedByRule",
+      "matchedIntents",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:72"
+    ]
+  },
+  {
+    "stage": "INTENT_CLASSIFIER_COLLISION",
+    "keys": [
+      "matchedByRule",
+      "matchedIntents",
+      "userText"
+    ],
+    "sites": [
+      "undefined:55"
+    ]
+  },
+  {
+    "stage": "INTENT_CLASSIFIER_NO_MATCH",
+    "keys": [
+      "intent",
+      "matchedByRule",
+      "matchedIntents",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:80"
+    ]
+  },
+  {
+    "stage": "INTENT_COLLISION_DETECTED",
+    "keys": [
+      "intent",
+      "state"
+    ],
+    "sites": [
+      "undefined:54"
+    ]
+  },
+  {
+    "stage": "INTENT_COLLISION_RESOLVED",
+    "keys": [
+      "context",
+      "intent",
+      "output",
+      "schemaJson",
+      "state"
+    ],
+    "sites": [
+      "undefined:83"
+    ]
+  },
+  {
+    "stage": "INTENT_MISSING",
+    "keys": [
+      "context",
+      "fallbackIntent",
+      "intent",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:39"
+    ]
+  },
+  {
+    "stage": "INTENT_RESOLVE_NO_CHANGE",
+    "keys": [],
+    "sites": [
+      "undefined:121"
+    ]
+  },
+  {
+    "stage": "INTENT_RESOLVE_SKIPPED_POLICY",
+    "keys": [
+      "dialogueAct",
+      "intent",
+      "intentLockReason",
+      "intentLocked",
+      "policyDecision",
+      "reason",
+      "skipIntentResolution",
+      "state"
+    ],
+    "sites": [
+      "undefined:103"
+    ]
+  },
+  {
+    "stage": "INTENT_RESOLVE_SKIPPED_SCHEMA_COLLECTION",
+    "keys": [
+      "intent",
+      "intentLockReason",
+      "intentLocked",
+      "state"
+    ],
+    "sites": [
+      "undefined:84"
+    ]
+  },
+  {
+    "stage": "INTENT_RESOLVE_SKIPPED_STICKY_INTENT",
+    "keys": [
+      "dialogueAct",
+      "intent",
+      "intentLockReason",
+      "intentLocked",
+      "policyDecision",
+      "reason",
+      "skipIntentResolution",
+      "state"
+    ],
+    "sites": [
+      "undefined:113"
+    ]
+  },
+  {
+    "stage": "INTENT_RESOLVE_START",
+    "keys": [
+      "intentLockReason",
+      "intentLocked",
+      "previousIntent"
+    ],
+    "sites": [
+      "undefined:68"
+    ]
+  },
+  {
+    "stage": "INTERACTION_POLICY_DECIDED",
+    "keys": [
+      "dialogueAct",
+      "hasPendingAction",
+      "hasPendingSlot",
+      "intent",
+      "policyDecision",
+      "skipIntentResolution",
+      "state"
+    ],
+    "sites": [
+      "undefined:101"
+    ]
+  },
+  {
+    "stage": "MEMORY_UPDATED",
+    "keys": [
+      "intent",
+      "recalled",
+      "state",
+      "stores",
+      "summaryChars"
+    ],
+    "sites": [
+      "undefined:85"
+    ]
+  },
+  {
+    "stage": "PENDING_ACTION_EXECUTED",
+    "keys": [
+      "pendingActionResult",
+      "reason",
+      "taskBean",
+      "taskMethods"
+    ],
+    "sites": [
+      "undefined:112"
+    ]
+  },
+  {
+    "stage": "PENDING_ACTION_FAILED",
+    "keys": [
+      "actionKey",
+      "pendingActionResult",
+      "reason"
+    ],
+    "sites": [
+      "undefined:92",
+      "undefined:102"
+    ]
+  },
+  {
+    "stage": "PENDING_ACTION_LIFECYCLE",
+    "keys": [
+      "event",
+      "turn"
+    ],
+    "sites": [
+      "undefined:62",
+      "undefined:90",
+      "undefined:105",
+      "undefined:116"
+    ]
+  },
+  {
+    "stage": "PENDING_ACTION_REJECTED",
+    "keys": [
+      "actionKey",
+      "pendingActionResult",
+      "reason"
+    ],
+    "sites": [
+      "undefined:82"
+    ]
+  },
+  {
+    "stage": "PENDING_ACTION_SKIPPED",
+    "keys": [
+      "actionKey",
+      "reason"
+    ],
+    "sites": [
+      "undefined:48",
+      "undefined:73"
+    ]
+  },
+  {
+    "stage": "PIPELINE_TIMING",
+    "keys": [],
+    "sites": [
+      "undefined:59"
+    ]
+  },
+  {
+    "stage": "POLICY_BLOCK",
+    "keys": [
+      "pattern",
+      "policyId",
+      "ruleType"
+    ],
+    "sites": [
+      "undefined:44"
+    ]
+  },
+  {
+    "stage": "PROMPT_RENDERING",
+    "keys": [
+      "promptVars",
+      "rendered_template"
+    ],
+    "sites": [
+      "undefined:44"
+    ]
+  },
+  {
+    "stage": "RESOLVE_RESPONSE",
+    "keys": [
+      "intent",
+      "responseId",
+      "state"
+    ],
+    "sites": [
+      "undefined:85"
+    ]
+  },
+  {
+    "stage": "RESOLVE_RESPONSE_LLM_INPUT",
+    "keys": [
+      "derivation_hint",
+      "schema",
+      "session",
+      "system_prompt",
+      "user_prompt"
+    ],
+    "sites": [
+      "undefined:81",
+      "undefined:80"
+    ]
+  },
+  {
+    "stage": "RESOLVE_RESPONSE_LLM_OUTPUT",
+    "keys": [
+      "output"
+    ],
+    "sites": [
+      "undefined:103",
+      "undefined:100"
+    ]
+  },
+  {
+    "stage": "RESOLVE_RESPONSE_SELECTED",
+    "keys": [
+      "intent",
+      "outputFormat",
+      "resolver",
+      "templateDesc",
+      "templateId"
+    ],
+    "sites": [
+      "undefined:45"
+    ]
+  },
+  {
+    "stage": "RESPONSE_EXACT",
+    "keys": [
+      "text"
+    ],
+    "sites": [
+      "undefined:67"
+    ]
+  },
+  {
+    "stage": "RESPONSE_MAPPING_NOT_FOUND",
+    "keys": [
+      "intent",
+      "state"
+    ],
+    "sites": [
+      "undefined:68"
+    ]
+  },
+  {
+    "stage": "RULE_APPLIED (sub)",
+    "keys": [
+      "action",
+      "actionValue",
+      "intent",
+      "pattern",
+      "ruleAgentPostIntent",
+      "ruleAgentPostTool",
+      "ruleExecutionOrigin",
+      "ruleExecutionSource",
+      "ruleId",
+      "rulePhase",
+      "ruleStateCode",
+      "ruleToolPostExecution",
+      "type"
+    ],
+    "sites": [
+      "undefined:154"
+    ]
+  },
+  {
+    "stage": "RULE_MATCH (sub)",
+    "keys": [
+      "action",
+      "context",
+      "intent",
+      "ruleAgentPostIntent",
+      "ruleAgentPostTool",
+      "ruleExecutionOrigin",
+      "ruleExecutionSource",
+      "ruleId",
+      "rulePhase",
+      "ruleStateCode",
+      "ruleToolPostExecution",
+      "ruleType",
+      "schemaJson",
+      "state"
+    ],
+    "sites": [
+      "undefined:121"
+    ]
+  },
+  {
+    "stage": "RULE_NO_MATCH (sub)",
+    "keys": [
+      "action",
+      "actionValue",
+      "evaluatedState",
+      "intent",
+      "pattern",
+      "reason",
+      "ruleAgentPostIntent",
+      "ruleAgentPostTool",
+      "ruleDbPhase",
+      "ruleExecutionOrigin",
+      "ruleExecutionSource",
+      "ruleId",
+      "rulePhase",
+      "ruleStateCode",
+      "ruleToolPostExecution",
+      "state",
+      "type"
+    ],
+    "sites": [
+      "undefined:173",
+      "undefined:219"
+    ]
+  },
+  {
+    "stage": "SCHEMA_EXTRACTION_LLM_INPUT",
+    "keys": [
+      "schema",
+      "system_prompt",
+      "userInput",
+      "user_prompt"
+    ],
+    "sites": [
+      "undefined:152"
+    ]
+  },
+  {
+    "stage": "SCHEMA_EXTRACTION_LLM_OUTPUT",
+    "keys": [
+      "json"
+    ],
+    "sites": [
+      "undefined:175"
+    ]
+  },
+  {
+    "stage": "SCHEMA_EXTRACTION_START",
+    "keys": [
+      "schemaId"
+    ],
+    "sites": [
+      "undefined:112"
+    ]
+  },
+  {
+    "stage": "SCHEMA_STATUS",
+    "keys": [
+      "context",
+      "hasAnySchemaValue",
+      "intent",
+      "intentLockReason",
+      "intentLocked",
+      "missingFieldOptions",
+      "missingRequiredFields",
+      "schemaComplete",
+      "schemaId",
+      "schemaJson",
+      "state"
+    ],
+    "sites": [
+      "undefined:216"
+    ]
+  },
+  {
+    "stage": "STATE_GRAPH_VALID",
+    "keys": [
+      "allowed",
+      "fromState",
+      "intent",
+      "toState",
+      "validateOnly"
+    ],
+    "sites": [
+      "undefined:54"
+    ]
+  },
+  {
+    "stage": "STATE_GRAPH_VIOLATION",
+    "keys": [
+      "allowed",
+      "fromState",
+      "intent",
+      "softBlock",
+      "toState",
+      "validateOnly"
+    ],
+    "sites": [
+      "undefined:60"
+    ]
+  },
+  {
+    "stage": "STATE_MISSING",
+    "keys": [
+      "context",
+      "fallbackIntent",
+      "fallbackState",
+      "intent",
+      "state",
+      "userText"
+    ],
+    "sites": [
+      "undefined:50"
+    ]
+  },
+  {
+    "stage": "TOOL_ORCHESTRATION_ERROR",
+    "keys": [
+      "_meta",
+      "error",
+      "intent",
+      "state",
+      "status",
+      "tool_code",
+      "tool_group"
+    ],
+    "sites": [
+      "undefined:147",
+      "undefined:168"
+    ]
+  },
+  {
+    "stage": "TOOL_ORCHESTRATION_REQUEST",
+    "keys": [],
+    "sites": [
+      "undefined:62"
+    ]
+  },
+  {
+    "stage": "TOOL_ORCHESTRATION_RESULT",
+    "keys": [
+      "_meta",
+      "intent",
+      "result",
+      "state",
+      "status",
+      "tool_code",
+      "tool_group"
+    ],
+    "sites": [
+      "undefined:99",
+      "undefined:125"
+    ]
+  },
+  {
+    "stage": "USER_INPUT",
+    "keys": [
+      "text"
+    ],
+    "sites": [
+      "undefined:27"
+    ]
+  }
+]
