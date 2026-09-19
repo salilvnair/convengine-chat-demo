@@ -262,6 +262,8 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
   const [chatSettings, setChatSettings] = useState({
     showFeedback:          true,
     showAudit:             false,
+    showAuditSearch:       true,
+    fullscreenTabAudit:    false,
     showDarkModeLightMode: true,
     accentColor:           '#6366f1',
   });
@@ -505,8 +507,12 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
               maxFiles:      chatSettings.attachMaxFiles ?? 5,
             },
             // v1.2: layout picker gains "Fullscreen (new tab)" → opens the demo's
-            // /fullscreen route in a new browser tab for breathing room.
-            fullscreenTabUrl:      `/fullscreen?accent=${encodeURIComponent(chatSettings.accentColor)}`,
+            // /fullscreen route in a new browser tab for breathing room. The
+            // audit panel is fullscreen-only, so "Fullscreen Tab Is Auditable"
+            // is how you get to it from panel/sidepanel: it appends ?audit=true
+            // so the new tab opens with the trail already showing.
+            fullscreenTabUrl:      `/fullscreen?accent=${encodeURIComponent(chatSettings.accentColor)}${chatSettings.fullscreenTabAudit ? '&audit=true' : ''}`,
+            showAuditSearch:       chatSettings.showAuditSearch !== false,
             defaultDark:           darkMode || chatSettings.previewDark,
             bubbleUserBg:          chatSettings.bubbleUserBg,
             bubbleUserText:        chatSettings.bubbleUserText,

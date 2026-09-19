@@ -73,3 +73,47 @@ export function getAuditTrail(conversationId) {
 export function clearAuditTrail(conversationId) {
   trails.delete(conversationId);
 }
+
+/**
+ * Searches audit rows across EVERY conversation the store still holds.
+ *
+ * Backs the panel's search box, which exists because the trail you want is
+ * usually the one from an hour ago whose conversation id nobody wrote down.
+ * Matching is a case-insensitive substring over the stage name and the payload
+ * — the payload is already a JSON string, so this searches user text, intents,
+ * rule ids, prompts and tool names in one pass without indexing anything.
+ *
+ * Newest first, because a search for "loan" wants the most recent one.
+ */
+/**
+ * The searchable text of a row: its payload WITHOUT the _meta envelope.
+ *
+ * _meta carries a session snapshot that repeats the user's text and names
+ * every step run so far, so matching it makes one hit return the entire
+ * conversation — searching "form submitted" returned all 89 rows of the turn
+ * rather than the USER_INPUT row that actually contains it.
+ */
+function bodyText(row) {
+  try {
+    const { _meta, ...body } = JSON.parse(row.payloadJson);
+    return JSON.stringify(body).toLowerCase();
+  } catch {
+    return row.payloadJson.toLowerCase();
+  }
+}
+
+export function searchAuditTrails(query, limit = 50) {
+  const q = String(query ?? '').trim().toLowerCase();
+  if (!q) return { results: [], total: 0 };
+
+  const hits = [];
+  for (const rows of trails.values()) {
+    for (const row of rows) {
+      if (row.stage.toLowerCase().includes(q) || bodyText(row).includes(q)) {
+        hits.push(row);
+      }
+    }
+  }
+  hits.sort((a, b) => b.auditId - a.auditId);
+  return { results: hits.slice(0, limit), total: hits.length };
+}

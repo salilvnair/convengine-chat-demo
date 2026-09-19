@@ -13,6 +13,7 @@ function FullscreenChat() {
   const accent   = params.get('accent')   ?? '#6366f1';
   const feedback = params.get('feedback') !== 'false';
   const audit        = params.get('audit')        === 'true';
+  const auditSearch  = params.get('auditSearch')  !== 'false';
   const engineStatus = params.get('engineStatus') !== 'false';
   const darkMode = params.get('darkMode') !== 'false';
   const title         = params.get('title')       || 'ConvEngine Assistant';
@@ -38,6 +39,7 @@ function FullscreenChat() {
           placeholder,
           showFeedback:          feedback,
           showAudit:             audit,
+          showAuditSearch:       auditSearch,
           showEngineStatus:      engineStatus,
           showDarkModeLightMode: darkMode,
           // The wrapper below already paints #0f172a when darkMode is on, so

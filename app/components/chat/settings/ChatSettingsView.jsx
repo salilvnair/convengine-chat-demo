@@ -15,6 +15,8 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
   const [settings, setSettings] = useState({
     showFeedback:          true,
     showAudit:             false,
+    showAuditSearch:       true,
+    fullscreenTabAudit:    false,
     showEngineStatus:      true,
     showDarkModeLightMode: true,
     chatMode:              'panel',
