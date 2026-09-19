@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { matchResponse } from '../../../../data/fake-chat.js';
 import { emitSseEvent }  from '../sse-bus.js';
+import { recordAuditEntry } from '../audit-store.js';
+import { buildTurnAudit }   from '../../../../data/fake-audit.js';
 import { VERBOSE_SEQUENCES } from '../../../../data/fake-stream.js';
 
 /**
@@ -34,9 +36,14 @@ export async function POST(request) {
   const body = await request.json();
   const { message, inputParams, conversationId } = body;
 
+  const startedAt     = Date.now();
   const cleanMessage  = message ?? '';
+  // matchResponse() fills this in with the stage that actually produced the
+  // answer — see the audit trail below.
+  const trace = {};
   const enrichOptions = {
     inputParams: inputParams ?? {},
+    trace,
   };
 
   // ── Fire mock SSE VERBOSE events asynchronously ─────────────────────────
@@ -99,10 +106,63 @@ export async function POST(request) {
     ];
     if (asked) parts.push('', `You also said: "${asked}"`);
     parts.push('', '_(demo handler — a real backend would parse these)_');
-    return NextResponse.json({ payload: parts.join('\n') });
+    const attachmentReply = parts.join('\n');
+
+    writeTurnAudit({
+      conversationId,
+      userText: cleanMessage,
+      trace:    { stage: 'attachment-handler' },
+      agent:    attachmentReply,
+      files: files.map((f) => ({
+        name:         f?.name,
+        mimeType:     f?.mimeType,
+        bytesDecoded: (() => {
+          try { return Buffer.from(String(f?.content ?? ''), 'base64').length; } catch { return 0; }
+        })(),
+      })),
+      startedAt,
+      thinkMs: delay,
+    });
+
+    return NextResponse.json({ payload: attachmentReply });
   }
 
   const agent = matchResponse(cleanMessage, enrichOptions);
 
+  writeTurnAudit({
+    conversationId,
+    userText: cleanMessage,
+    trace,
+    agent,
+    startedAt,
+    thinkMs: delay,
+  });
+
   return NextResponse.json({ payload: agent });
+}
+
+/**
+ * Writes one turn's audit trail, in the stage order the real engine's pipeline
+ * writes it. See app/data/fake-audit.js for where each stage and payload shape
+ * comes from in the ConvEngine sources.
+ */
+function writeTurnAudit({ conversationId, userText, trace, agent, files = [], startedAt, thinkMs }) {
+  if (!conversationId) return;
+  // Real milliseconds: everything the route did, minus the simulated
+  // think-time, so PIPELINE_TIMING reports work rather than the sleep.
+  const totalMs  = Date.now() - startedAt;
+  const matchMs  = Math.max(totalMs - Math.round(thinkMs), 0);
+  const timings  = {
+    AuditUserInputStep:      0,
+    DialogueActStep:         0,
+    InteractionPolicyStep:   0,
+    GuardrailStep:           0,
+    IntentResolutionStep:    matchMs,
+    SchemaExtractionStep:    0,
+    ResponseResolutionStep:  0,
+    PersistConversationStep: 0,
+  };
+  for (const { stage, payload } of buildTurnAudit({ userText, trace, agent, files, timings })) {
+    recordAuditEntry(conversationId, stage, payload);
+  }
 }

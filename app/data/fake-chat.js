@@ -157,6 +157,17 @@ const ENRICHMENT_PREFIX_HANDLERS = {
  * @returns {string|object}  Agent response (string or renderer-payload object)
  */
 export function matchResponse(input, options = {}) {
+  // ── Audit trace (optional out-param) ──────────────────────────────────────
+  // The API route passes `options.trace` when it wants to record HOW the reply
+  // was produced, for the audit trail. Every stage below reports itself through
+  // decided(); matching behaviour and return values are untouched, so callers
+  // that don't pass a trace see exactly what they saw before.
+  const trace = options.trace ?? null;
+  const decided = (stage, detail, value) => {
+    if (trace) Object.assign(trace, { stage, ...detail });
+    return value;
+  };
+
   // ── Resolve enrichment prefix ─────────────────────────────────────────────
   // The prefix is embedded at the start of input ("/<cmd> <text>") by the client
   // when config.messageEnrichment.prefix is set. We detect it, strip it, and
@@ -174,7 +185,7 @@ export function matchResponse(input, options = {}) {
   if (activePrefix && ENRICHMENT_PREFIX_HANDLERS[activePrefix]) {
     const enrichMeta = { prefix: activePrefix };
     const result = ENRICHMENT_PREFIX_HANDLERS[activePrefix](cleanInput, options, enrichMeta);
-    if (result != null) return result;
+    if (result != null) return decided('enrichment-prefix', { prefix: activePrefix }, result);
   }
 
   // All subsequent stages use cleanInput (prefix stripped in text mode,
@@ -189,7 +200,7 @@ export function matchResponse(input, options = {}) {
     const rawItems = effectiveInput.slice(effectiveInput.toLowerCase().indexOf(':') + 1).trim();
     const items = rawItems || 'your selected items';
     const pick = BUY_NOW_RESPONSES[Math.floor(Math.random() * BUY_NOW_RESPONSES.length)];
-    return pick(items);
+    return decided('buy-now-handler', { items }, pick(items));
   }
 
   // ── Stage 0b: Book flight handler (dynamic flight booking) ───────────────
@@ -198,7 +209,7 @@ export function matchResponse(input, options = {}) {
   if (bfMatch) {
     const [, carrier, price] = bfMatch;
     const pick = BOOK_FLIGHT_RESPONSES[Math.floor(Math.random() * BOOK_FLIGHT_RESPONSES.length)];
-    return pick(carrier, price);
+    return decided('book-flight-handler', { carrier, price }, pick(carrier, price));
   }
 
   // ── Stage 0c: CompleteForm submit handler ─────────────────────────────────
@@ -210,7 +221,7 @@ export function matchResponse(input, options = {}) {
     const country = parts[1] || 'your country';
     const dob     = (parts.find((p) => p.toLowerCase().startsWith('dob:')) ?? 'DOB: not provided').replace(/^dob:\s*/i, '');
     const pick = FORM_SUBMIT_RESPONSES[Math.floor(Math.random() * FORM_SUBMIT_RESPONSES.length)];
-    return pick(name, country, dob);
+    return decided('form-submit-handler', { name, country }, pick(name, country, dob));
   }
 
   // ── Stage 0d: FAQ / knowledge-base handler ─────────────────────────────────
@@ -225,11 +236,11 @@ export function matchResponse(input, options = {}) {
   const looksFaq  = FAQ_TRIGGERS.some((re) => re.test(effectiveInput));
   const notHijack = NOT_FAQ.every((re) => !re.test(effectiveInput));
   if (looksFaq && notHijack) {
-    return buildFaqResponsePayloadFromFakeChat(effectiveInput, 3);
+    return decided('faq-knowledge-base', {}, buildFaqResponsePayloadFromFakeChat(effectiveInput, 3));
   }
   // ── Stage 1: Direct exact match ──────────────────────────────────────────
   for (const pair of pairs) {
-    if (normalise(pair.user) === norm) return pair.agent;
+    if (normalise(pair.user) === norm) return decided('exact-match', { matchedPhrase: pair.user }, pair.agent);
   }
 
   // ── Stage 2: Contains match ──────────────────────────────────────────────
@@ -237,7 +248,7 @@ export function matchResponse(input, options = {}) {
   // b) pair's phrase contains the entire input
   for (const pair of pairs) {
     const pNorm = normalise(pair.user);
-    if (norm.includes(pNorm) || pNorm.includes(norm)) return pair.agent;
+    if (norm.includes(pNorm) || pNorm.includes(norm)) return decided('contains-match', { matchedPhrase: pair.user }, pair.agent);
   }
 
   // ── Stage 3a: Best Jaccard score ─────────────────────────────────────────
@@ -253,7 +264,7 @@ export function matchResponse(input, options = {}) {
   }
 
   // Accept if Jaccard ≥ 0.35 (at least ~35% word overlap)
-  if (bestScore >= 0.35 && bestPair) return bestPair.agent;
+  if (bestScore >= 0.35 && bestPair) return decided('jaccard-similarity', { matchedPhrase: bestPair.user, score: bestScore }, bestPair.agent);
 
   // ── Stage 3b: Levenshtein for short inputs (typo tolerance) ─────────────
   if (norm.length <= 40) {
@@ -275,9 +286,9 @@ export function matchResponse(input, options = {}) {
       }
     }
 
-    if (levenPair) return levenPair.agent;
+    if (levenPair) return decided('levenshtein-typo', { matchedPhrase: levenPair.user, editDistance: bestDist }, levenPair.agent);
   }
 
   // ── Stage 4: Random fallback ─────────────────────────────────────────────
-  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  return decided('random-fallback', {}, fallbacks[Math.floor(Math.random() * fallbacks.length)]);
 }
