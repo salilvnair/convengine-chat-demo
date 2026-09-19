@@ -40,6 +40,11 @@ function FullscreenChat() {
           showAudit:             audit,
           showEngineStatus:      engineStatus,
           showDarkModeLightMode: darkMode,
+          // The wrapper below already paints #0f172a when darkMode is on, so
+          // without this the page was dark navy while the widget inside it
+          // rendered light — the param only ever controlled whether the
+          // theme TOGGLE was shown, never the theme itself.
+          defaultDark:           darkMode,
           showHeaderDot:         headerDot,
           showLandingAvatar:     landingAvatar,
           showLandingSubtitle:   landingSubtitle,
