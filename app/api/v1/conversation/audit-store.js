@@ -102,18 +102,48 @@ function bodyText(row) {
   }
 }
 
-export function searchAuditTrails(query, limit = 50) {
+/**
+ * Same contract as convengine-demo's AuditSearchController, so the widget
+ * behaves identically against the mock and the real engine:
+ *   - an empty query returns the newest rows (the explorer's landing page
+ *     uses this to list recent conversations)
+ *   - a query that looks like a conversation id (8+ hex chars) matches the
+ *     id prefix — the id is on the row, not in the body text search reads
+ *   - optional filters: stage (comma list, exact or "NAME (sub)" prefix),
+ *     conversationId, intent, state (from _meta), errorsOnly, offset
+ */
+const FAILURE_RE = /(ERROR|FAILURE|FAILED|VIOLATION|DENY|REJECTED|NOT_FOUND|POLICY_BLOCK)/;
+
+function metaOf(row) {
+  try { return JSON.parse(row.payloadJson)._meta ?? null; } catch { return null; }
+}
+
+export function searchAuditTrails(query, limit = 50, filters = {}) {
   const q = String(query ?? '').trim().toLowerCase();
-  if (!q) return { results: [], total: 0 };
+  const idPrefix = /^[0-9a-f]{8}[0-9a-f-]{0,28}$/.test(q) ? q : null;
+  const stages = String(filters.stage ?? '').split(',').map((x) => x.trim()).filter(Boolean);
 
   const hits = [];
   for (const rows of trails.values()) {
     for (const row of rows) {
-      if (row.stage.toLowerCase().includes(q) || bodyText(row).includes(q)) {
-        hits.push(row);
+      if (q) {
+        const hit = idPrefix
+          ? String(row.conversationId).toLowerCase().startsWith(idPrefix)
+          : row.stage.toLowerCase().includes(q) || bodyText(row).includes(q);
+        if (!hit) continue;
       }
+      if (stages.length && !stages.some((st) => row.stage === st || row.stage.startsWith(st + ' ('))) continue;
+      if (filters.conversationId && row.conversationId !== filters.conversationId) continue;
+      if (filters.errorsOnly && !FAILURE_RE.test(row.stage)) continue;
+      if (filters.intent || filters.state) {
+        const m = metaOf(row);
+        if (filters.intent && m?.intent !== filters.intent) continue;
+        if (filters.state && m?.state !== filters.state) continue;
+      }
+      hits.push(row);
     }
   }
   hits.sort((a, b) => b.auditId - a.auditId);
-  return { results: hits.slice(0, limit), total: hits.length };
+  const offset = Math.max(0, Number(filters.offset) || 0);
+  return { results: hits.slice(offset, offset + limit), total: hits.length };
 }

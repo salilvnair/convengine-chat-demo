@@ -11,6 +11,7 @@ import bash       from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css        from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import json       from 'react-syntax-highlighter/dist/esm/languages/prism/json';
 import markup     from 'react-syntax-highlighter/dist/esm/languages/prism/markup';
+import java       from 'react-syntax-highlighter/dist/esm/languages/prism/java';
 
 SyntaxHighlighter.registerLanguage('jsx', jsx);
 SyntaxHighlighter.registerLanguage('tsx', tsx);
@@ -21,6 +22,7 @@ SyntaxHighlighter.registerLanguage('ts', typescript);
 SyntaxHighlighter.registerLanguage('bash', bash);
 SyntaxHighlighter.registerLanguage('sh', bash);
 SyntaxHighlighter.registerLanguage('css', css);
+SyntaxHighlighter.registerLanguage('java', java);
 SyntaxHighlighter.registerLanguage('json', json);
 SyntaxHighlighter.registerLanguage('html', markup);
 SyntaxHighlighter.registerLanguage('xml', markup);

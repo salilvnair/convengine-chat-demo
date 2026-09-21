@@ -8,6 +8,7 @@ import { SectionHeader, FeatureChip, DocCard, DocCardBody, NavDot } from './ui/D
 import { BackToTop }   from './ui/BackToTop.jsx';
 import { PlaygroundPanel }  from './PlaygroundPanel.jsx';
 import { RendererLiveDemo } from './RendererLiveDemo.jsx';
+import { AuditExplorerSection } from './AuditExplorerSection.jsx';
 import { TailwindPlayground, TailwindNotificationPreview, TailwindSidebarPreview, TailwindClassInputDemo } from './TailwindSection.jsx';
 import { SvgPreview, svgStringToComponent, DEFAULT_ICON_SVGS, ICON_META } from './IconSection.jsx';
 
@@ -17,6 +18,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
     showAudit:             false,
     showAuditSearch:       true,
     fullscreenTabAudit:    false,
+    showAuditExplorer:     true,
     showEngineStatus:      true,
     showDarkModeLightMode: true,
     chatMode:              'panel',
@@ -176,6 +178,7 @@ export function ChatSettingsView({ onSettingsChange, hideHeader = false, chatAct
           <NavDot href="#actions">Actions API</NavDot>
           <NavDot href="#enrichment">Message Enrichment</NavDot>
           <NavDot href="#hooks">Hooks</NavDot>
+          <NavDot href="#audit-explorer">Audit Explorer</NavDot>
         </nav>
 
         <div className="flex-1 min-w-0 space-y-8">
@@ -1229,6 +1232,8 @@ http.createServer((req, res) => {
               <CodeBlock lang="jsx" code={`import { useChatActions } from '@salilvnair/convengine-chat';\n\nfunction HelpButton() {\n  const { actions } = useChatActions();\n  return (\n    <button\n      className="ce-interactive-submit"\n      onClick={() => actions.submitSilent({ intent: 'help' })}\n    >\n      Get Help\n    </button>\n  );\n}`} />
             </DocCardBody>
           </DocCard>
+
+          <AuditExplorerSection darkMode={darkMode} />
 
         </div>
       </div>

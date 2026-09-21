@@ -14,6 +14,7 @@ function FullscreenChat() {
   const feedback = params.get('feedback') !== 'false';
   const audit        = params.get('audit')        === 'true';
   const auditSearch  = params.get('auditSearch')  !== 'false';
+  const auditExplorer = params.get('auditExplorer') !== 'false';
   const engineStatus = params.get('engineStatus') !== 'false';
   const darkMode = params.get('darkMode') !== 'false';
   const title         = params.get('title')       || 'ConvEngine Assistant';
@@ -40,6 +41,8 @@ function FullscreenChat() {
           showFeedback:          feedback,
           showAudit:             audit,
           showAuditSearch:       auditSearch,
+          showAuditExplorer:     auditExplorer,
+          auditExplorerUrl:      '/audit',
           showEngineStatus:      engineStatus,
           showDarkModeLightMode: darkMode,
           // The wrapper below already paints #0f172a when darkMode is on, so

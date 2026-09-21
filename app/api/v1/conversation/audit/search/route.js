@@ -20,8 +20,14 @@ import { searchAuditTrails } from '../../audit-store.js';
  * rather than being read as a conversation whose id is "search".
  */
 export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const query = searchParams.get('q') ?? '';
-  const limit = Math.min(Number(searchParams.get('limit')) || 50, 500);
-  return NextResponse.json(searchAuditTrails(query, limit));
+  const { searchParams: p } = new URL(request.url);
+  const limit = Math.min(Number(p.get('limit')) || 50, 500);
+  return NextResponse.json(searchAuditTrails(p.get('q') ?? '', limit, {
+    stage:          p.get('stage'),
+    conversationId: p.get('conversationId'),
+    intent:         p.get('intent'),
+    state:          p.get('state'),
+    errorsOnly:     p.get('errorsOnly') === 'true',
+    offset:         p.get('offset'),
+  }));
 }

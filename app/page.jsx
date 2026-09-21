@@ -264,6 +264,7 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
     showAudit:             false,
     showAuditSearch:       true,
     fullscreenTabAudit:    false,
+    showAuditExplorer:     true,
     showDarkModeLightMode: true,
     accentColor:           '#6366f1',
   });
@@ -310,6 +311,8 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
             showFeedback:          chatSettings.showFeedback,
             showDarkModeLightMode: chatSettings.showDarkModeLightMode,
             defaultDark:           darkMode,
+            showAuditExplorer:     true,
+            auditExplorerUrl:      '/audit',
             // On-load reply pill — a generic "asking about" context the host app
             // pre-loads; also demonstrates showBubbleReply (↩ on AI replies).
             replyContext:          demoReply
@@ -513,6 +516,10 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
             // so the new tab opens with the trail already showing.
             fullscreenTabUrl:      `/fullscreen?accent=${encodeURIComponent(chatSettings.accentColor)}${chatSettings.fullscreenTabAudit ? '&audit=true' : ''}`,
             showAuditSearch:       chatSettings.showAuditSearch !== false,
+            // Header button → the full-page Audit Explorer at /audit, deep-linked
+            // to this conversation. Opens in a new tab.
+            showAuditExplorer:     chatSettings.showAuditExplorer !== false,
+            auditExplorerUrl:      '/audit',
             defaultDark:           darkMode || chatSettings.previewDark,
             bubbleUserBg:          chatSettings.bubbleUserBg,
             bubbleUserText:        chatSettings.bubbleUserText,
