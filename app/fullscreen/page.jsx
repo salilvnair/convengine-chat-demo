@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ConvEngineChat } from '@salilvnair/convengine-chat';
+import { withBase } from '../lib/basePath.js';
 import { interactiveRenderers } from '../components/chat/InteractiveRenderers.jsx';
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ function FullscreenChat() {
           showAudit:             audit,
           showAuditSearch:       auditSearch,
           showAuditExplorer:     auditExplorer,
-          auditExplorerUrl:      '/audit',
+          auditExplorerUrl:      withBase('/audit'),
           showEngineStatus:      engineStatus,
           showDarkModeLightMode: darkMode,
           // The wrapper below already paints #0f172a when darkMode is on, so

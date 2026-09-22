@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { AuditExplorer, AUDIT_EXPLORER_PALETTES } from '@salilvnair/convengine-chat';
 import { CodeBlock } from './ui/CodeBlock.jsx';
+import { withBase } from '../../../lib/basePath.js';
 import { Tip } from './ui/Tip.jsx';
 import { PropRow, PropsTable } from './ui/PropRow.jsx';
 import { SectionHeader, DocCard, DocCardBody } from './ui/DocLayout.jsx';
@@ -94,7 +95,7 @@ export function AuditExplorerSection({ darkMode }) {
             that pairs every prompt with its reply.
           </p>
           <a
-            href="/audit"
+            href={withBase('/audit')}
             target="_blank"
             rel="noopener noreferrer"
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-pink-500 hover:opacity-90"

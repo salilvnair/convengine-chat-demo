@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { CodeBlock }        from './ui/CodeBlock.jsx';
+import { withBase }         from '../../../lib/basePath.js';
 import { JsonEditorField }  from './ui/JsonEditorField.jsx';
 import { Toggle }           from './ui/Toggle.jsx';
 import { scrollToConfigProp } from './ui/BackToTop.jsx';
@@ -975,7 +976,7 @@ export function PlaygroundPanel({ settings, onChange, iconSvgs, onIconChange, on
                   showMinimize:     String(settings.showMinimize),
                   composerShape:    settings.composerShape,
                 });
-                window.open(`/fullscreen?${p.toString()}`, '_blank', 'noopener,noreferrer');
+                window.open(withBase(`/fullscreen?${p.toString()}`), '_blank', 'noopener,noreferrer');
               }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
                 settings.chatMode === 'fullscreen' ? 'text-white shadow-md' : 'border-violet-200 text-violet-600 hover:bg-violet-50'

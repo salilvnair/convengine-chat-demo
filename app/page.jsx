@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ConvEngineChat }       from '@salilvnair/convengine-chat';
+import { withBase }             from './lib/basePath.js';
 import { MetricCard }           from './components/demo/MetricCard.jsx';
 import { RevenueChart }         from './components/demo/RevenueChart.jsx';
 import { OrdersTable }          from './components/demo/OrdersTable.jsx';
@@ -312,7 +313,7 @@ function DemoApp({ onBack, darkMode, onToggleDark }) {
             showDarkModeLightMode: chatSettings.showDarkModeLightMode,
             defaultDark:           darkMode,
             showAuditExplorer:     true,
-            auditExplorerUrl:      '/audit',
+            auditExplorerUrl:      withBase('/audit'),
             // On-load reply pill — a generic "asking about" context the host app
             // pre-loads; also demonstrates showBubbleReply (↩ on AI replies).
             replyContext:          demoReply
@@ -514,12 +515,12 @@ function QuickstartApp({ onBack, darkMode, onToggleDark }) {
             // audit panel is fullscreen-only, so "Fullscreen Tab Is Auditable"
             // is how you get to it from panel/sidepanel: it appends ?audit=true
             // so the new tab opens with the trail already showing.
-            fullscreenTabUrl:      `/fullscreen?accent=${encodeURIComponent(chatSettings.accentColor)}${chatSettings.fullscreenTabAudit ? '&audit=true' : ''}`,
+            fullscreenTabUrl:      withBase(`/fullscreen?accent=${encodeURIComponent(chatSettings.accentColor)}${chatSettings.fullscreenTabAudit ? '&audit=true' : ''}`),
             showAuditSearch:       chatSettings.showAuditSearch !== false,
             // Header button → the full-page Audit Explorer at /audit, deep-linked
             // to this conversation. Opens in a new tab.
             showAuditExplorer:     chatSettings.showAuditExplorer !== false,
-            auditExplorerUrl:      '/audit',
+            auditExplorerUrl:      withBase('/audit'),
             defaultDark:           darkMode || chatSettings.previewDark,
             bubbleUserBg:          chatSettings.bubbleUserBg,
             bubbleUserText:        chatSettings.bubbleUserText,
